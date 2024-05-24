@@ -7,7 +7,7 @@ branding:
 inputs:
   name-of-input:
     description: 'description'
-    required: false
+    required: true
     default: 'main'
 outputs:
   name-of-output:
