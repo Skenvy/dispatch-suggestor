@@ -13,10 +13,10 @@ jobs:
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         fetch-depth: 0
-      - name: Hello world action step
-        uses: ./
-        id: action-use
-        with:
-          name-of-input: 'Yikes'
-      - name: Get the output time
-        run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"
+    - name: Hello world action step
+      uses: ./
+      id: action-use
+      with:
+        name-of-input: 'Yikes'
+    - name: Get the output time
+      run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"
