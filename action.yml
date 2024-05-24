@@ -1,0 +1,17 @@
+name: 'Dispatch Suggestor'
+description: 'Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.'
+author: 'Nathan Levett'
+branding:
+  icon: 'sunrise'  
+  color: 'purple'
+inputs:
+  name-of-input:
+    description: 'description'
+    required: false
+    default: 'main'
+outputs:
+  name-of-output:
+    description: 'description'
+runs:
+  using: 'node20'
+  main: 'index.js'
