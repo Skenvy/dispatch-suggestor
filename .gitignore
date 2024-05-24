@@ -89,7 +89,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist # being a gh action, we _want_ to commit the @vercel/ncc built dist.
 
 # Gatsby files
 .cache/
