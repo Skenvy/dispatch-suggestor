@@ -84,9 +84,12 @@ lint:
 
 # Confirm that the checked in lib folder's contents are what would be generated
 # from transpiling the checked in typescript, to make sure they're in sync.
-.PHONY: verify_transpiled_checkin
-verify_transpiled_checkin: clean
+.PHONY: bundle
+bundle: clean
 	$(NPM) run bundle
+
+.PHONY: verify_transpiled_checkin
+verify_transpiled_checkin: bundle
 	echo "Exit if a change to the transpiled JavaScript is not committed"
 	git add lib && git diff --exit-code --cached --stat -- lib/
 

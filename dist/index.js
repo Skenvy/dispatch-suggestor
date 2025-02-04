@@ -1,3 +1,7 @@
+/**
+ * For licenses see https://github.com/Skenvy/dispatch-suggestor/blob/main/dist/licenses.txt
+ */
+
 import require$$0 from 'os';
 import require$$0$1 from 'crypto';
 import require$$1 from 'fs';
