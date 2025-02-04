@@ -1,0 +1,15 @@
+The LICENSE file for the typescript-action template that some of the files here
+were sourced, is https://github.com/actions/typescript-action/blob/main/LICENSE
+(snapshot at commit 1e68449593284f2ee5ffd6679abb32f9e222b3bb) is MIT licensed.
+
+The following files are copies from this template covered by their license:
+./tsconfig.*
+./rollup.config.ts
+./jest.config.ts
+./eslint.config.mjs
+./prettierrc.yml
+./prettierignore
+./.env.example
+
+The following files are significant but not complete duplicates from the above:
+./package.json
