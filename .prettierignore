@@ -2,3 +2,7 @@
 dist/
 node_modules/
 coverage/
+# Prettier has garbage rules that nontrivially break yaml
+*.yaml
+*.yml
+*.md
