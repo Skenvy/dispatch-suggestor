@@ -50,13 +50,19 @@ setup: install_npm
 	$(NPM) list
 
 # https://docs.npmjs.com/cli/v8/commands/npm-outdated
-# https://docs.npmjs.com/cli/v8/commands/npm-update
-# https://docs.npmjs.com/cli/v8/commands/npm-install
-# If outdated fails, try install. If outdated still fails, manually run `npm up`
-.PHONY: update
-update:
+.PHONY: outdated
+outdated:
 	$(NPM) outdated
+
+# https://docs.npmjs.com/cli/v8/commands/npm-install
+.PHONY: install
+install: install_npm
 	$(NPM) install
+
+# https://docs.npmjs.com/cli/v8/commands/npm-update
+.PHONY: update
+update: install_npm
+	$(NPM) update
 
 .PHONY: clean
 clean:
