@@ -3,7 +3,7 @@ Version: 0.0.1
 License: Apache-2.0
 Private: true
 Description: Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.
-Repository: https://github.com/Skenvy/dispatch-suggestor.git
+Repository: git+https://github.com/Skenvy/dispatch-suggestor.git
 Homepage: https://github.com/Skenvy/dispatch-suggestor
 Author: Nathan Levett <nathan.a.z.levett@gmail.com> (https://github.com/Skenvy)
 License Copyright:

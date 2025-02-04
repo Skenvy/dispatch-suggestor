@@ -15,6 +15,20 @@ jobs:
       # with: # apply these when testing how it works externally
       #   sparse-checkout: .github/workflows
       #   sparse-checkout-cone-mode: false
+    - name: 🟨🟦🟩🟥 Set up Node
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      with:
+        node-version-file: './.nvmrc'
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+    - name: 🧱 Install build dependencies
+      run: make setup
+    - name: 🦂 Test
+      run: make test
+    - name: 🧹 Lint
+      run: make lint
+    - name: ⚖ Does the checked in JS match the transpiled TS? 
+      run: make verify_transpiled_checkin
     - name: Use the action
       uses: ./
       id: action-use
@@ -22,4 +36,3 @@ jobs:
         name-of-input: 'Yikes'
     - name: Get the output time
       run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"
-    - run: make verify_transpiled_checkin
