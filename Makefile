@@ -71,16 +71,6 @@ clean:
 	rm -rf .nyc_output
 	$(NPM) run clean
 
-.PHONY: docs docs_server
-
-docs:
-	$(NPM) run docs
-
-# http://127.0.0.1:8080/docs/tsdoc
-# http://127.0.0.1:8080/docs/coverage
-docs_server: docs
-	$(NPM) run docs:server
-
 # https://docs.npmjs.com/cli/v8/commands/npm-test
 # https://docs.npmjs.com/cli/v8/commands/npm-publish
 .PHONY: test
@@ -96,7 +86,7 @@ lint:
 # from transpiling the checked in typescript, to make sure they're in sync.
 .PHONY: verify_transpiled_checkin
 verify_transpiled_checkin: clean
-	$(NPM) run build
+	$(NPM) run bundle
 	echo "Exit if a change to the transpiled JavaScript is not committed"
 	git add lib && git diff --exit-code --cached --stat -- lib/
 
