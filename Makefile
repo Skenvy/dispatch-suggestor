@@ -91,7 +91,7 @@ bundle: clean
 .PHONY: verify_transpiled_checkin
 verify_transpiled_checkin: bundle
 	echo "Exit if a change to the transpiled JavaScript is not committed"
-	git add lib && git diff --exit-code --cached --stat -- lib/
+	git add dist && git diff --exit-code --cached --stat -- dist/
 
 # https://docs.npmjs.com/cli/v8/commands/npm-pack
 .PHONY: build

@@ -22,3 +22,4 @@ jobs:
         name-of-input: 'Yikes'
     - name: Get the output time
       run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"
+    - run: make verify_transpiled_checkin
