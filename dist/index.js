@@ -32107,6 +32107,14 @@ var graphql2 = withDefaults(request, {
 const MAX_GH_GQL_PAGINATION = 100;
 async function run() {
     try {
+        // TODO REMOVE THIS LEFTOVER EXAMPLE
+        // const nameToGreet = core.getInput('name-of-input')
+        // console.log(`Hello ${nameToGreet}!`)
+        // const time = new Date().toTimeString()
+        // core.setOutput('name-of-output', time)
+        // Get the JSON webhook payload for the event that triggered the workflow
+        // const payload = JSON.stringify(github.context.payload, undefined, 2)
+        // console.log(`The event payload: ${payload}`)
         const context = githubExports.context;
         const eventName = context.eventName;
         // If this isn't running under a PR trigger, annotate and leave early
@@ -32114,16 +32122,8 @@ async function run() {
             coreExports.setFailed(`dispatch-suggestor can only be run from a pull_request event, but it was triggered by a ${eventName} event.`);
             return;
         }
-        // Otherwise, procede as usual
+        // Otherwise, procede as usual. Prep the token, owner, repo and PR#
         const token = coreExports.getInput('github_token');
-        // EXAMPLE LEFTOVER
-        const nameToGreet = coreExports.getInput('name-of-input');
-        console.log(`Hello ${nameToGreet}!`);
-        const time = new Date().toTimeString();
-        coreExports.setOutput('name-of-output', time);
-        // Get the JSON webhook payload for the event that triggered the workflow
-        // const payload = JSON.stringify(github.context.payload, undefined, 2)
-        // console.log(`The event payload: ${payload}`)
         async function getPRNumber() {
             return context.payload.pull_request
                 ? context.payload.pull_request.number
@@ -32135,6 +32135,7 @@ async function run() {
         console.log('owner:', owner);
         console.log('repo:', repo);
         console.log('pullRequestNumber:', pullRequestNumber);
+        // Query for acquiring the list of files changed by this PR + the graphql API ratelimit
         const gql_query_list_PR_files = `
       query($owner: String!, $name: String!, $pullRequestNumber: Int!, $MAX_GH_GQL_PAGINATION: Int!) {
         repository(owner: $owner, name: $name) {
@@ -32158,7 +32159,9 @@ async function run() {
         }
       }
     `;
+        // Get the list of files changed by this PR.
         async function fetchChangedFiles() {
+            let files = [];
             try {
                 const result = await graphql2({
                     query: gql_query_list_PR_files,
@@ -32170,20 +32173,28 @@ async function run() {
                         authorization: `Bearer ${token}`
                     }
                 });
-                console.log('Full API Response:', JSON.stringify(result, null, 2));
-                const files = result.repository.pullRequest.files.edges.map((edge) => edge.node);
-                const rateLimitInfo = result.rateLimit;
-                console.log('Changed files:', files);
-                console.log('Rate Limit Info:', rateLimitInfo);
-                coreExports.notice(`Changed files: ${files}`);
-                coreExports.warning(`Rate Limit Info: ${rateLimitInfo}`);
+                try {
+                    files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+                    const rateLimitInfo = result.rateLimit;
+                    console.log('Changed files:', files);
+                    console.log('Rate Limit Info:', rateLimitInfo);
+                    coreExports.notice(`Changed files: ${files.toString()}`);
+                    coreExports.warning(`Rate Limit Info: ${rateLimitInfo.toString()}`);
+                }
+                catch (error) {
+                    console.log('Full API Response:', JSON.stringify(result, null, 2));
+                    throw error; // throw error down to the next catch
+                }
             }
             catch (error) {
                 console.error('Error fetching changed files:', error);
                 coreExports.setFailed(`Error fetching changed files: ${error}`);
             }
+            return files;
         }
-        fetchChangedFiles();
+        const files = fetchChangedFiles();
+        // temporarily log the files a second time to stop it complaining about files being unused.
+        console.log('Changed files:', files);
     }
     catch (error) {
         if (error instanceof Error)
