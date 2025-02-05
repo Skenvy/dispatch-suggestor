@@ -32116,13 +32116,13 @@ async function run() {
         // Otherwise, procede as usual
         const token = coreExports.getInput('github_token');
         // EXAMPLE LEFTOVER
-        // const nameToGreet = core.getInput('name-of-input')
-        // console.log(`Hello ${nameToGreet}!`)
-        // const time = new Date().toTimeString()
-        // core.setOutput('name-of-output', time)
-        // // Get the JSON webhook payload for the event that triggered the workflow
-        // const payload = JSON.stringify(github.context.payload, undefined, 2)
-        // console.log(`The event payload: ${payload}`)
+        const nameToGreet = coreExports.getInput('name-of-input');
+        console.log(`Hello ${nameToGreet}!`);
+        const time = new Date().toTimeString();
+        coreExports.setOutput('name-of-output', time);
+        // Get the JSON webhook payload for the event that triggered the workflow
+        const payload = JSON.stringify(githubExports.context.payload, undefined, 2);
+        console.log(`The event payload: ${payload}`);
         async function getPRNumber() {
             return context.payload.pull_request
                 ? context.payload.pull_request.number
@@ -32131,6 +32131,9 @@ async function run() {
         const owner = context.repo.owner;
         const repo = context.repo.repo;
         const pullRequestNumber = await getPRNumber();
+        console.log('owner:', owner);
+        console.log('repo:', repo);
+        console.log('pullRequestNumber:', pullRequestNumber);
         const gql_query_list_PR_files = `
       query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
         repository(owner: $owner, name: $name) {
@@ -32157,7 +32160,7 @@ async function run() {
         async function fetchChangedFiles() {
             try {
                 const result = await graphql2({
-                    gql_query_list_PR_files,
+                    query: gql_query_list_PR_files,
                     owner,
                     name: repo,
                     pullRequestNumber,
