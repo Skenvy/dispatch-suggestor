@@ -32172,11 +32172,11 @@ async function run() {
                 const rateLimitInfo = result.data.rateLimit;
                 console.log('Changed files:', files);
                 console.log('Rate Limit Info:', rateLimitInfo);
-                coreExports.notice('Changed files:' + files);
-                coreExports.warning('Rate Limit Info:' + rateLimitInfo);
+                coreExports.notice(`Changed files: ${files}`);
+                coreExports.warning(`Rate Limit Info: ${rateLimitInfo}`);
             }
             catch (error) {
-                console.error('Error fetching changed files:', error);
+                coreExports.error(`Error fetching changed files: ${error}`);
             }
         }
         fetchChangedFiles();
