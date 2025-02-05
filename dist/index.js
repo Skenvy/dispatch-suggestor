@@ -32125,9 +32125,7 @@ async function run() {
         // Otherwise, procede as usual. Prep the token, owner, repo and PR#
         const token = coreExports.getInput('github_token');
         async function getPRNumber() {
-            return context.payload.pull_request
-                ? context.payload.pull_request.number
-                : null;
+            return context.payload.pull_request ? context.payload.pull_request.number : null;
         }
         const owner = context.repo.owner;
         const repo = context.repo.repo;
@@ -32177,9 +32175,9 @@ async function run() {
                     files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
                     const rateLimitInfo = result.rateLimit;
                     console.log('Changed files:', files);
-                    console.log('Rate Limit Info:', rateLimitInfo);
+                    console.log('GraphQL Rate Limit Info:', rateLimitInfo);
                     coreExports.notice(`Changed files: ${files.toString()}`);
-                    coreExports.warning(`Rate Limit Info: ${rateLimitInfo.toString()}`);
+                    coreExports.notice(`GraphQL Rate Limit Info: ${JSON.stringify(rateLimitInfo)}`);
                 }
                 catch (error) {
                     console.log('Full API Response:', JSON.stringify(result, null, 2));

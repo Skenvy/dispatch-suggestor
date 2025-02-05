@@ -30,9 +30,7 @@ async function run() {
     const token = core.getInput('github_token')
 
     async function getPRNumber() {
-      return context.payload.pull_request
-        ? context.payload.pull_request.number
-        : null
+      return context.payload.pull_request ? context.payload.pull_request.number : null
     }
 
     const owner = context.repo.owner
@@ -105,14 +103,12 @@ async function run() {
           }
         })
         try {
-          files = result.repository.pullRequest.files.edges.map(
-            (edge) => edge.node.path
-          )
+          files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path)
           const rateLimitInfo = result.rateLimit
           console.log('Changed files:', files)
-          console.log('Rate Limit Info:', rateLimitInfo)
+          console.log('GraphQL Rate Limit Info:', rateLimitInfo)
           core.notice(`Changed files: ${files.toString()}`)
-          core.warning(`Rate Limit Info: ${rateLimitInfo.toString()}`)
+          core.notice(`GraphQL Rate Limit Info: ${JSON.stringify(rateLimitInfo)}`)
         } catch (error) {
           console.log('Full API Response:', JSON.stringify(result, null, 2))
           throw error // throw error down to the next catch
