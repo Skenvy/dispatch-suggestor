@@ -66,26 +66,24 @@ async function run() {
       }
     `
     interface GQLQueryListPRFiles {
-      data: {
-        repository: {
-          pullRequest: {
-            files: {
-              edges: {
-                node: {
-                  path: string
-                  additions: number
-                  deletions: number
-                  changeType: string
-                }
-              }[]
-            }
+      repository: {
+        pullRequest: {
+          files: {
+            edges: {
+              node: {
+                path: string
+                additions: number
+                deletions: number
+                changeType: string
+              }
+            }[]
           }
         }
-        rateLimit: {
-          cost: number
-          remaining: number
-          resetAt: string
-        }
+      }
+      rateLimit: {
+        cost: number
+        remaining: number
+        resetAt: string
       }
     }
 
@@ -104,10 +102,10 @@ async function run() {
 
         console.log('Full API Response:', JSON.stringify(result, null, 2))
 
-        const files = result.data.repository.pullRequest.files.edges.map(
+        const files = result.repository.pullRequest.files.edges.map(
           (edge) => edge.node
         )
-        const rateLimitInfo = result.data.rateLimit
+        const rateLimitInfo = result.rateLimit
         console.log('Changed files:', files)
         console.log('Rate Limit Info:', rateLimitInfo)
         core.notice(`Changed files: ${files}`)

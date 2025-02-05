@@ -32171,8 +32171,8 @@ async function run() {
                     }
                 });
                 console.log('Full API Response:', JSON.stringify(result, null, 2));
-                const files = result.data.repository.pullRequest.files.edges.map((edge) => edge.node);
-                const rateLimitInfo = result.data.rateLimit;
+                const files = result.repository.pullRequest.files.edges.map((edge) => edge.node);
+                const rateLimitInfo = result.rateLimit;
                 console.log('Changed files:', files);
                 console.log('Rate Limit Info:', rateLimitInfo);
                 coreExports.notice(`Changed files: ${files}`);
