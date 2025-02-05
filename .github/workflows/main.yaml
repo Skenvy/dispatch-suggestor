@@ -1,13 +1,14 @@
-name: Test
+name: Test Lint Verify
 on:
   push:
 defaults:
   run:
     shell: bash
-# permissions: {} # swap to when public
+permissions:
+  contents: read
 jobs:
   test:
-    name: Test the action
+    name: Test List Verify
     runs-on: 'ubuntu-latest'
     steps:
     - name: Checkout
@@ -29,10 +30,3 @@ jobs:
       run: make lint
     - name: ⚖ Does the checked in JS match the transpiled TS? 
       run: make verify_transpiled_checkin
-    - name: Use the action
-      uses: ./
-      id: action-use
-      with:
-        name-of-input: 'Yikes'
-    - name: Get the output time
-      run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"

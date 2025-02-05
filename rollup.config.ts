@@ -27,8 +27,7 @@ const config = {
       sourcemap: true,
       banner: {
         commentStyle: 'regular',
-        content:
-          'For licenses see https://github.com/Skenvy/dispatch-suggestor/blob/main/dist/licenses.txt'
+        content: 'For licenses see https://github.com/Skenvy/dispatch-suggestor/blob/main/dist/licenses.txt'
       },
       thirdParty: {
         includePrivate: true,

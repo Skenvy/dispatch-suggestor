@@ -21,3 +21,382 @@ I first initialiased this back in May 2024 but didn't create it back then, so in
 and doing what the docs say, instead of fixing anything or even managing to just work without causing more issues, throws 10 new errors on the next `npm run bundle`. I regret putting in time to update from [vercel/ncc](https://github.com/vercel/ncc), which just worked without hours of trying to figure out what is wrong with it.
 
 TLDR rollup has been so frustrating to setup as part of this template I ended up raising two issues on the `actions/typescript-template`, [#1010](https://github.com/actions/typescript-action/issues/1010) and [#1011](https://github.com/actions/typescript-action/issues/1011) (which refs the fix [rollup/plugins #1805](https://github.com/rollup/plugins/issues/1805)).
+
+## Start making the action's functionality
+Ideally, we want the required `permissions:` to be as minimal as possible, and to require as little else out of the enclosing job / workflow. The two things that will need to be known within the action for it to produce its list of dispatch links, are firstly a list of all triggering conditions on all workflows, as well as the filenames of the contents of a PR.
+### Get all workflow triggering conditions
+Attempting to use co-pilot for the first time, it suggests a way of achieving this with both the REST API and the GraphQL API. Something worth knowing about both is that they simply expect the full retrieval of the workflows, so a viable alternative could be to require the enclosing job to run something like this first.
+```yaml
+- name: Checkout
+  uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  with:
+    sparse-checkout: .github/workflows
+    sparse-checkout-cone-mode: false
+```
+#### Rest
+```javascript
+const axios = require('axios');
+
+// Replace with your GitHub token
+const token = process.env.GITHUB_TOKEN;
+
+// Replace with your repository details
+const owner = 'Skenvy';
+const repo = 'dispatch-suggestor';
+
+async function getWorkflows() {
+  try {
+    // Get the list of workflows
+    const workflowsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/workflows`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    const workflows = workflowsResponse.data.workflows;
+
+    // Get details of each workflow
+    for (const workflow of workflows) {
+      const workflowDetailsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      const workflowDetails = workflowDetailsResponse.data;
+      console.log(`Workflow: ${workflowDetails.name}`);
+      console.log(`Triggering Conditions: ${JSON.stringify(workflowDetails.on, null, 2)}`);
+      console.log('---');
+    }
+  } catch (error) {
+    console.error('Error fetching workflows:', error);
+  }
+}
+
+getWorkflows();
+```
+#### GraphQL
+```javascript
+const { graphql } = require('@octokit/graphql');
+
+// Replace with your GitHub token
+const token = process.env.GITHUB_TOKEN;
+
+// Replace with your repository details
+const owner = 'Skenvy';
+const repo = 'dispatch-suggestor';
+
+const listFilesQuery = `
+  query($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+      object(expression: "HEAD:.github/workflows") {
+        ... on Tree {
+          entries {
+            name
+            type
+          }
+        }
+      }
+    }
+  }
+`;
+
+const fetchFileContentQuery = `
+  query($owner: String!, $name: String!, $filePath: String!) {
+    repository(owner: $owner, name: $name) {
+      object(expression: $filePath) {
+        ... on Blob {
+          text
+        }
+      }
+    }
+  }
+`;
+
+async function fetchWorkflowFiles() {
+  try {
+    // List workflow files
+    const filesResult = await graphql({
+      query: listFilesQuery,
+      owner,
+      name: repo,
+      headers: {
+        authorization: `token ${token}`,
+      },
+    });
+
+    const workflowFiles = filesResult.repository.object.entries.filter(entry => entry.type === 'blob');
+
+    // Fetch content of each workflow file
+    for (const file of workflowFiles) {
+      const filePath = `HEAD:.github/workflows/${file.name}`;
+      const fileContentResult = await graphql({
+        query: fetchFileContentQuery,
+        owner,
+        name: repo,
+        filePath,
+        headers: {
+          authorization: `token ${token}`,
+        },
+      });
+
+      const fileContent = fileContentResult.repository.object.text;
+      console.log(`File: ${file.name}`);
+      console.log(`Content:\n${fileContent}`);
+      console.log('---');
+    }
+  } catch (error) {
+    console.error('Error fetching workflow files:', error);
+  }
+}
+
+fetchWorkflowFiles();
+```
+#### Rest
+\+ "checking and forming the dispatch url"
+\+ "incorporate the branch name into the dispatch url" * 3
+\+ "check that the dispatch doesn't expect required arguments"
+```javascript
+const axios = require('axios');
+
+// Replace with your GitHub token
+const token = process.env.GITHUB_TOKEN;
+
+// Replace with your repository details
+const owner = 'Skenvy';
+const repo = 'dispatch-suggestor';
+
+// Replace with your branch context (this can be set via an environment variable)
+const branchContext = process.env.BRANCH_CONTEXT || 'main';
+
+async function getWorkflows() {
+  try {
+    // Get the list of workflows
+    const workflowsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/workflows`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    const workflows = workflowsResponse.data.workflows;
+
+    // Get details of each workflow
+    for (const workflow of workflows) {
+      const workflowDetailsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      const workflowDetails = workflowDetailsResponse.data;
+      console.log(`Workflow: ${workflowDetails.name}`);
+      console.log(`Triggering Conditions: ${JSON.stringify(workflowDetails.on, null, 2)}`);
+
+      // Check if workflow_dispatch is one of the triggers
+      if (workflowDetails.on.workflow_dispatch) {
+        const dispatchUrl = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow.id}/dispatches`;
+        
+        // Check for required inputs
+        const requiredInputs = workflowDetails.on.workflow_dispatch.inputs || {};
+        const hasRequiredInputs = Object.keys(requiredInputs).length > 0;
+
+        console.log(`Dispatch URL: ${dispatchUrl}`);
+        console.log(`Requires Inputs: ${hasRequiredInputs}`);
+        if (hasRequiredInputs) {
+          console.log(`Required Inputs: ${JSON.stringify(requiredInputs, null, 2)}`);
+        }
+
+        // Print dispatch URL with branch context
+        const dispatchUrlWithBranch = `${dispatchUrl}?ref=${branchContext}`;
+        console.log(`Dispatch URL with Branch Context: ${dispatchUrlWithBranch}`);
+      }
+
+      console.log('---');
+    }
+  } catch (error) {
+    console.error('Error fetching workflows:', error);
+  }
+}
+
+getWorkflows();
+```
+Using the REST API as above to check the triggering conditions seems like a good place to start for now.
+### Get all filenames in a PR
+Initially, co-pilot kept suggesting using a step to achieve this
+```yaml
+- name: Get changed files
+  id: changed-files
+  uses: octokit/request-action@v2.x
+  with:
+    route: GET /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files
+    mediaType: '{"format":"json"}'
+    headers: '{"authorization":"token ${{ secrets.GITHUB_TOKEN }}"}'
+```
+I eventually asked it if it could handle just getting the list of files, possibly with the graphql API, and got the query+action
+```graphql
+query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pullRequestNumber) {
+      files(first: 100) {
+        edges {
+          node {
+            path
+            additions
+            deletions
+            changeType
+          }
+        }
+      }
+    }
+  }
+}
+```
+```javascript
+const { graphql } = require('@octokit/graphql');
+
+// Replace with your GitHub token
+const token = process.env.GITHUB_TOKEN;
+
+// Replace with your repository details and pull request number
+const owner = 'Skenvy';
+const repo = 'dispatch-suggestor';
+const pullRequestNumber = 1;
+
+const query = `
+  query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $pullRequestNumber) {
+        files(first: 100) {
+          edges {
+            node {
+              path
+              additions
+              deletions
+              changeType
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+async function fetchChangedFiles() {
+  try {
+    const result = await graphql({
+      query,
+      owner,
+      name: repo,
+      pullRequestNumber,
+      headers: {
+        authorization: `token ${token}`,
+      },
+    });
+
+    const files = result.repository.pullRequest.files.edges.map(edge => edge.node);
+    console.log('Changed files:', files);
+  } catch (error) {
+    console.error('Error fetching changed files:', error);
+  }
+}
+
+fetchChangedFiles();
+```
+I was cautios of the rate limit on the graphql API, which can be checked with;
+```graphql
+query {
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
+  }
+}
+```
+I asked it to esimtate the rate limit point cost for the search of filenames, and instead it suggested querying for the cost as part of the filename retrieval, with
+```graphql
+query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pullRequestNumber) {
+      files(first: 100) {
+        edges {
+          node {
+            path
+            additions
+            deletions
+            changeType
+          }
+        }
+      }
+    }
+  }
+  rateLimit {
+    cost
+    remaining
+    resetAt
+  }
+}
+```
+Or all up as
+```javascript
+const { graphql } = require('@octokit/graphql');
+
+// Replace with your GitHub token
+const token = process.env.GITHUB_TOKEN;
+
+// Replace with your repository details and pull request number
+const owner = 'Skenvy';
+const repo = 'dispatch-suggestor';
+const pullRequestNumber = 1;
+
+const query = `
+  query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $pullRequestNumber) {
+        files(first: 100) {
+          edges {
+            node {
+              path
+              additions
+              deletions
+              changeType
+            }
+          }
+        }
+      }
+    }
+    rateLimit {
+      cost
+      remaining
+      resetAt
+    }
+  }
+`;
+
+async function fetchChangedFiles() {
+  try {
+    const result = await graphql({
+      query,
+      owner,
+      name: repo,
+      pullRequestNumber,
+      headers: {
+        authorization: `token ${token}`,
+      },
+    });
+
+    const files = result.repository.pullRequest.files.edges.map(edge => edge.node);
+    const rateLimitInfo = result.rateLimit;
+    console.log('Changed files:', files);
+    console.log('Rate Limit Info:', rateLimitInfo);
+  } catch (error) {
+    console.error('Error fetching changed files:', error);
+  }
+}
+
+fetchChangedFiles();
+```
