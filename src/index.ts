@@ -36,6 +36,9 @@ async function run() {
     const owner = context.repo.owner
     const repo = context.repo.repo
     const pullRequestNumber = await getPRNumber()
+    console.log('owner:', owner)
+    console.log('repo:', repo)
+    console.log('pullRequestNumber:', pullRequestNumber)
 
     const gql_query_list_PR_files = `
       query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
@@ -87,7 +90,7 @@ async function run() {
     async function fetchChangedFiles() {
       try {
         const result = await graphql<GQLQueryListPRFiles>({
-          gql_query_list_PR_files,
+          query: gql_query_list_PR_files,
           owner,
           name: repo,
           pullRequestNumber,
