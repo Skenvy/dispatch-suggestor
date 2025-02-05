@@ -2,6 +2,8 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { graphql } from '@octokit/graphql'
 
+const MAX_GH_GQL_PAGINATION = 100
+
 async function run() {
   try {
     const context = github.context
@@ -44,7 +46,7 @@ async function run() {
       query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pullRequestNumber) {
-            files(first: 1000) {
+            files(first: $MAX_GH_GQL_PAGINATION) {
               edges {
                 node {
                   path
@@ -94,6 +96,7 @@ async function run() {
           owner,
           name: repo,
           pullRequestNumber,
+          MAX_GH_GQL_PAGINATION,
           headers: {
             authorization: `Bearer ${token}`
           }
