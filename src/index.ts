@@ -19,13 +19,13 @@ async function run() {
     const token = core.getInput('github_token')
 
     // EXAMPLE LEFTOVER
-    // const nameToGreet = core.getInput('name-of-input')
-    // console.log(`Hello ${nameToGreet}!`)
-    // const time = new Date().toTimeString()
-    // core.setOutput('name-of-output', time)
-    // // Get the JSON webhook payload for the event that triggered the workflow
-    // const payload = JSON.stringify(github.context.payload, undefined, 2)
-    // console.log(`The event payload: ${payload}`)
+    const nameToGreet = core.getInput('name-of-input')
+    console.log(`Hello ${nameToGreet}!`)
+    const time = new Date().toTimeString()
+    core.setOutput('name-of-output', time)
+    // Get the JSON webhook payload for the event that triggered the workflow
+    const payload = JSON.stringify(github.context.payload, undefined, 2)
+    console.log(`The event payload: ${payload}`)
 
     async function getPRNumber() {
       return context.payload.pull_request

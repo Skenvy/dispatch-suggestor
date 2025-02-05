@@ -5,6 +5,8 @@ defaults:
   run:
     shell: bash
 # permissions: {} # swap to when public
+permissions:
+  contents: read
 jobs:
   test:
     name: Test the Action
@@ -16,6 +18,7 @@ jobs:
         sparse-checkout: |
           action.yml
           dist/index.js
+          package.json
         sparse-checkout-cone-mode: false
     - name: Use the action
       uses: ./

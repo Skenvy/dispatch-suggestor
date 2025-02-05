@@ -9,6 +9,9 @@ inputs:
     description: 'description'
     required: true
     default: 'main'
+  github_token:
+    description: 'description'
+    required: true
 outputs:
   name-of-output:
     description: 'description'
