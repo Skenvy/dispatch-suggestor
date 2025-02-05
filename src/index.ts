@@ -43,7 +43,7 @@ async function run() {
     console.log('pullRequestNumber:', pullRequestNumber)
 
     const gql_query_list_PR_files = `
-      query($owner: String!, $name: String!, $pullRequestNumber: Int!) {
+      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $MAX_GH_GQL_PAGINATION: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pullRequestNumber) {
             files(first: $MAX_GH_GQL_PAGINATION) {

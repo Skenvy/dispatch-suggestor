@@ -4,7 +4,8 @@ on:
 defaults:
   run:
     shell: bash
-permissions: {}
+permissions:
+  contents: read
 jobs:
   test:
     name: Test List Verify
