@@ -102,6 +102,8 @@ async function run() {
         const rateLimitInfo = result.data.rateLimit
         console.log('Changed files:', files)
         console.log('Rate Limit Info:', rateLimitInfo)
+        core.notice('Changed files:' + files)
+        core.warning('Rate Limit Info:' + rateLimitInfo)
       } catch (error) {
         console.error('Error fetching changed files:', error)
       }
