@@ -32170,6 +32170,7 @@ async function run() {
                         authorization: `Bearer ${token}`
                     }
                 });
+                console.log('Full API Response:', JSON.stringify(result, null, 2));
                 const files = result.data.repository.pullRequest.files.edges.map((edge) => edge.node);
                 const rateLimitInfo = result.data.rateLimit;
                 console.log('Changed files:', files);
@@ -32178,7 +32179,8 @@ async function run() {
                 coreExports.warning(`Rate Limit Info: ${rateLimitInfo}`);
             }
             catch (error) {
-                coreExports.error(`Error fetching changed files: ${error}`);
+                console.error('Error fetching changed files:', error);
+                coreExports.setFailed(`Error fetching changed files: ${error}`);
             }
         }
         fetchChangedFiles();

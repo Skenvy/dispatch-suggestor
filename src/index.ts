@@ -102,6 +102,8 @@ async function run() {
           }
         })
 
+        console.log('Full API Response:', JSON.stringify(result, null, 2))
+
         const files = result.data.repository.pullRequest.files.edges.map(
           (edge) => edge.node
         )
@@ -111,7 +113,8 @@ async function run() {
         core.notice(`Changed files: ${files}`)
         core.warning(`Rate Limit Info: ${rateLimitInfo}`)
       } catch (error) {
-        core.error(`Error fetching changed files: ${error}`)
+        console.error('Error fetching changed files:', error)
+        core.setFailed(`Error fetching changed files: ${error}`)
       }
     }
 
