@@ -4,9 +4,10 @@ on:
 defaults:
   run:
     shell: bash
-# permissions: {} # swap to when public
 permissions:
   contents: read
+  pull-requests: read
+  # copilot hallucinated a "metadata" scope lol
 jobs:
   test:
     name: Test the Action

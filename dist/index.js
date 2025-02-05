@@ -32121,8 +32121,8 @@ async function run() {
         const time = new Date().toTimeString();
         coreExports.setOutput('name-of-output', time);
         // Get the JSON webhook payload for the event that triggered the workflow
-        const payload = JSON.stringify(githubExports.context.payload, undefined, 2);
-        console.log(`The event payload: ${payload}`);
+        // const payload = JSON.stringify(github.context.payload, undefined, 2)
+        // console.log(`The event payload: ${payload}`)
         async function getPRNumber() {
             return context.payload.pull_request
                 ? context.payload.pull_request.number
@@ -32165,7 +32165,7 @@ async function run() {
                     name: repo,
                     pullRequestNumber,
                     headers: {
-                        authorization: `token ${token}`
+                        authorization: `Bearer ${token}`
                     }
                 });
                 const files = result.data.repository.pullRequest.files.edges.map((edge) => edge.node);

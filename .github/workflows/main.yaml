@@ -4,7 +4,7 @@ on:
 defaults:
   run:
     shell: bash
-# permissions: {} # swap to when public
+permissions: {}
 jobs:
   test:
     name: Test List Verify
