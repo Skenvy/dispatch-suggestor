@@ -1,6 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { graphql } from '@octokit/graphql'
+import { Octokit } from '@octokit/rest'
+
+import * as fs from 'fs'
+import * as yaml from 'yaml'
 
 const MAX_GH_GQL_PAGINATION = 100
 
@@ -19,16 +23,22 @@ async function run() {
     const eventName = context.eventName
 
     // If this isn't running under a PR trigger, annotate and leave early
-    if (eventName !== 'pull_request') {
+    if (eventName !== 'pull_request' || !context.payload.pull_request) {
       core.setFailed(
         `dispatch-suggestor can only be run from a pull_request event, but it was triggered by a ${eventName} event.`
       )
       return
     }
 
-    // Otherwise, procede as usual. Prep the token, owner, repo and PR#
-    const token = core.getInput('github_token')
+    // Otherwise, procede as usual.
 
+    // Prep the token and Rest API
+    const token = core.getInput('github_token')
+    const ghRestAPI = new Octokit({
+      auth: `Bearer ${token}`
+    })
+
+    // Prep the owner, repo and PR#
     async function getPRNumber() {
       return context.payload.pull_request ? context.payload.pull_request.number : null
     }
@@ -36,6 +46,7 @@ async function run() {
     const owner = context.repo.owner
     const repo = context.repo.repo
     const pullRequestNumber = await getPRNumber()
+    // const trunkBranch = core.getInput('trunk-branch')
     console.log('owner:', owner)
     console.log('repo:', repo)
     console.log('pullRequestNumber:', pullRequestNumber)
@@ -128,11 +139,50 @@ async function run() {
     const files = fetchChangedFiles()
 
     // STEP TWO: Get the set of triggering conditions for all trunk workflows.
-    // At the moment this uses the rest API to query the workflows. If using the
-    // rest API this way too many times becomes a rate limit issue, consider
-    // making it optional to input that the user would prefer to parse checked
-    // out files 'locally' i.e. that they have run actions/checkout and would
-    // prefer to parse the checked out state rather than use the API.
+    // The rest API for a github_token has a rate limit of 1000/hour/repo. Thats
+    // not all that much when this is expected to be geared for a monorepo that
+    // could have high double digit to triple digit workflows with frequent
+    // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
+    // is expecting the workflow that runs it to have run actions/checkout.
+
+    // const branchContext = context.payload.pull_request.head.ref
+
+    async function getWorkflows() {
+      try {
+        // Get the list of workflows
+        const workflowsList = await ghRestAPI.actions.listRepoWorkflows({
+          owner: owner,
+          repo: repo
+        })
+        const workflows = workflowsList.data.workflows
+        // Get details of each workflow
+        for (const workflow of workflows) {
+          const workflowContentResponse = await ghRestAPI.repos.getContent({
+            owner: owner,
+            repo: repo,
+            path: `.github/workflows/${workflow.path}`
+          })
+          // getContent has a union type. Inspect it and go for a lil walk through node_modules ...
+          // @octokit/rest/node_modules/@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types.d.ts
+          // @octokit/rest/node_modules/@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types.d.ts
+          // @octokit/types/dist-types/generated/Endpoints.d.ts ~ @octokit/openapi-types/types.d.ts
+          // "/repos/{owner}/{repo}/contents/{path}" ~ "repos/get-content"
+          // s
+          const workflowData = workflowContentResponse.data
+          if (Array.isArray(workflowData)) {
+            return ''
+          }
+          const workflowFileContent = Buffer.from(workflowData.content, 'base64').toString('utf8')
+          const workflowYaml = yaml.load(workflowFileContent)
+          console.log(`Workflow: ${workflowYaml.name}`)
+          console.log(`On: ${JSON.stringify(workflowYaml.on, null, 2)}`)
+        }
+      } catch (error) {
+        console.error('Error fetching workflows:', error)
+      }
+    }
+
+    getWorkflows()
 
     // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
     console.log('Changed files:', files)

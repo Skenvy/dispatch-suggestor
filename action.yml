@@ -5,13 +5,13 @@ branding:
   icon: 'sunrise'  
   color: 'purple'
 inputs:
-  name-of-input:
-    description: 'description'
-    required: true
-    default: 'main'
   github_token:
     description: 'description'
     required: true
+  trunk-branch:
+    description: 'Name of the trunk branch, if not main'
+    required: false
+    default: 'main'
   log-event-payload:
     description: 'If not false, will print the whole triggering event payload'
     required: false
