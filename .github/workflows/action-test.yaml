@@ -5,6 +5,7 @@ defaults:
   run:
     shell: bash
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 jobs:
