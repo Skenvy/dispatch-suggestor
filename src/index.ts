@@ -127,7 +127,14 @@ async function run() {
 
     const files = fetchChangedFiles()
 
-    // temporarily log the files a second time to stop it complaining about files being unused.
+    // STEP TWO: Get the set of triggering conditions for all trunk workflows.
+    // At the moment this uses the rest API to query the workflows. If using the
+    // rest API this way too many times becomes a rate limit issue, consider
+    // making it optional to input that the user would prefer to parse checked
+    // out files 'locally' i.e. that they have run actions/checkout and would
+    // prefer to parse the checked out state rather than use the API.
+
+    // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
     console.log('Changed files:', files)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
