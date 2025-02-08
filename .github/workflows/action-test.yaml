@@ -1,4 +1,4 @@
-name: Action
+name: Action Test
 on:
   pull_request:
 defaults:
@@ -7,7 +7,6 @@ defaults:
 permissions:
   contents: read
   pull-requests: read
-  # copilot hallucinated a "metadata" scope lol
 jobs:
   test:
     name: Test the Action

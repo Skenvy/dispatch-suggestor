@@ -7,13 +7,13 @@ const MAX_GH_GQL_PAGINATION = 100
 async function run() {
   try {
     // TODO REMOVE THIS LEFTOVER EXAMPLE
-    // const nameToGreet = core.getInput('name-of-input')
-    // console.log(`Hello ${nameToGreet}!`)
-    // const time = new Date().toTimeString()
-    // core.setOutput('name-of-output', time)
+    const time = new Date().toTimeString()
+    core.setOutput('name-of-output', time)
+
     // Get the JSON webhook payload for the event that triggered the workflow
-    // const payload = JSON.stringify(github.context.payload, undefined, 2)
-    // console.log(`The event payload: ${payload}`)
+    if (core.getInput('log-event-payload') != 'false') {
+      console.log('The event payload:', JSON.stringify(github.context.payload, undefined, 2))
+    }
 
     const context = github.context
     const eventName = context.eventName
@@ -39,6 +39,11 @@ async function run() {
     console.log('owner:', owner)
     console.log('repo:', repo)
     console.log('pullRequestNumber:', pullRequestNumber)
+
+    // STEP ONE: Get the list of files this PR touches
+    // At the moment this is done with the graphql endpoint. If for some reason
+    // that ends up being too frequently used, could add an option to use the
+    // rest api instead, but no point implementing both now.
 
     // Query for acquiring the list of files changed by this PR + the graphql API ratelimit
     const gql_query_list_PR_files = `
