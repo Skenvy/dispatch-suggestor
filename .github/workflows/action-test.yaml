@@ -22,6 +22,7 @@ jobs:
           dist/index.js
           package.json
         sparse-checkout-cone-mode: false
+    - run: ls -liath .github/workflows/
     - name: Use the action
       uses: ./
       id: action-use
