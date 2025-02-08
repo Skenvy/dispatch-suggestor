@@ -4,9 +4,30 @@ import { graphql } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
 import * as fs from 'fs'
+import * as path from 'path'
 import * as yaml from 'yaml'
 
 const MAX_GH_GQL_PAGINATION = 100
+const HERE_DIR = './' // assume this is running on the default checkout location
+const GITHUB_WORKFLOWS_REGEX = /\/\.github\/workflows\/[^/]+\.ya?ml$/
+
+function getFilesMatchingRegex(dir: string, regex: RegExp): string[] {
+  const files: string[] = []
+  function readDirectory(directory: string) {
+    const items = fs.readdirSync(directory)
+    for (const item of items) {
+      const fullPath = path.join(directory, item)
+      const stat = fs.statSync(fullPath)
+      if (stat.isDirectory()) {
+        readDirectory(fullPath)
+      } else if (regex.test(item)) {
+        files.push(fullPath)
+      }
+    }
+  }
+  readDirectory(dir)
+  return files
+}
 
 async function run() {
   try {
@@ -149,33 +170,30 @@ async function run() {
 
     async function getWorkflows() {
       try {
-        // Get the list of workflows
-        const workflowsList = await ghRestAPI.actions.listRepoWorkflows({
+        const workflowPathList = getFilesMatchingRegex(HERE_DIR, GITHUB_WORKFLOWS_REGEX)
+        const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner,
           repo: repo
         })
-        const workflows = workflowsList.data.workflows
+        const workflowsAPI = new Map(
+          workflowsListedByAPI.data.workflows.map((workflow) => [
+            path.join(HERE_DIR, `.github/workflows/${workflow.path}`),
+            workflow
+          ])
+        )
         // Get details of each workflow
-        for (const workflow of workflows) {
-          const workflowContentResponse = await ghRestAPI.repos.getContent({
-            owner: owner,
-            repo: repo,
-            path: `.github/workflows/${workflow.path}`
-          })
-          // getContent has a union type. Inspect it and go for a lil walk through node_modules ...
-          // @octokit/rest/node_modules/@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types.d.ts
-          // @octokit/rest/node_modules/@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types.d.ts
-          // @octokit/types/dist-types/generated/Endpoints.d.ts ~ @octokit/openapi-types/types.d.ts
-          // "/repos/{owner}/{repo}/contents/{path}" ~ "repos/get-content"
-          // s
-          const workflowData = workflowContentResponse.data
-          if (Array.isArray(workflowData)) {
-            return ''
+        console.log('All workflows LOCAL are ', workflowPathList.toString())
+        console.log('All workflows API are ', workflowsAPI.toString())
+        console.log('Does this path matcher and dispatch checker work?')
+        for (const workflowPath of workflowPathList) {
+          if (workflowsAPI.has(workflowPath)) {
+            const workflowContent = fs.readFileSync(workflowPath, 'utf8')
+            const workflowYaml = yaml.parse(workflowContent)
+            if (workflowYaml.on.workflow_dispatch) {
+              console.log(`Workflow: ${workflowYaml.name}`)
+              console.log(`On: ${JSON.stringify(workflowYaml.on, null, 2)}`)
+            }
           }
-          const workflowFileContent = Buffer.from(workflowData.content, 'base64').toString('utf8')
-          const workflowYaml = yaml.load(workflowFileContent)
-          console.log(`Workflow: ${workflowYaml.name}`)
-          console.log(`On: ${JSON.stringify(workflowYaml.on, null, 2)}`)
         }
       } catch (error) {
         console.error('Error fetching workflows:', error)
