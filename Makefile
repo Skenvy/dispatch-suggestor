@@ -69,6 +69,7 @@ clean:
 	rm -f $(SCOPED_PKG_NAME)-*.tgz
 	rm -rf docs
 	rm -rf .nyc_output
+	rm -rf dist
 	$(NPM) run clean
 
 # https://docs.npmjs.com/cli/v8/commands/npm-test

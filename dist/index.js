@@ -42304,7 +42304,7 @@ async function run() {
             }
             return files;
         }
-        const files = fetchChangedFiles();
+        const files = await fetchChangedFiles();
         // STEP TWO: Get the set of triggering conditions for all trunk workflows.
         // The rest API for a github_token has a rate limit of 1000/hour/repo. Thats
         // not all that much when this is expected to be geared for a monorepo that
@@ -42342,7 +42342,7 @@ async function run() {
                 console.error('Error fetching workflows:', error);
             }
         }
-        getWorkflows();
+        await getWorkflows();
         // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
         console.log('Changed files:', files);
     }
