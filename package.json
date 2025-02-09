@@ -48,7 +48,7 @@
     "~~ why is the package command so bloated? ~~": "https://github.com/rollup/plugins/issues/1805",
     "package": "npx rollup --config rollup.config.ts --configPlugin '@rollup/plugin-typescript={compilerOptions:{sourceMap:false}}' --sourcemap",
     "package:watch": "npm run package -- --watch",
-    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest --passWithNoTests",
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
   "dependencies": {
