@@ -42210,6 +42210,7 @@ function getFilesMatchingRegex(dir, regex) {
     readDirectory(dir);
     return files;
 }
+
 async function run() {
     try {
         // TODO REMOVE THIS LEFTOVER EXAMPLE
@@ -42249,10 +42250,10 @@ async function run() {
         // rest api instead, but no point implementing both now.
         // Query for acquiring the list of files changed by this PR + the graphql API ratelimit
         const gql_query_list_PR_files = `
-      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $MAX_GH_GQL_PAGINATION: Int!) {
+      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $maximumGitHubGraphQLPagination: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pullRequestNumber) {
-            files(first: $MAX_GH_GQL_PAGINATION) {
+            files(first: $maximumGitHubGraphQLPagination) {
               edges {
                 node {
                   path
@@ -42280,7 +42281,7 @@ async function run() {
                     owner,
                     name: repo,
                     pullRequestNumber,
-                    MAX_GH_GQL_PAGINATION,
+                    maximumGitHubGraphQLPagination: MAX_GH_GQL_PAGINATION,
                     headers: {
                         authorization: `Bearer ${token}`
                     }

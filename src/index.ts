@@ -7,27 +7,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'yaml'
 
-const MAX_GH_GQL_PAGINATION = 100
-const HERE_DIR = './' // assume this is running on the default checkout location
-const GITHUB_WORKFLOWS_REGEX = /\/\.github\/workflows\/[^/]+\.ya?ml$/
-
-function getFilesMatchingRegex(dir: string, regex: RegExp): string[] {
-  const files: string[] = []
-  function readDirectory(directory: string) {
-    const items = fs.readdirSync(directory)
-    for (const item of items) {
-      const fullPath = path.join(directory, item)
-      const stat = fs.statSync(fullPath)
-      if (stat.isDirectory()) {
-        readDirectory(fullPath)
-      } else if (regex.test(item)) {
-        files.push(fullPath)
-      }
-    }
-  }
-  readDirectory(dir)
-  return files
-}
+import * as utils from './utils.js'
 
 async function run() {
   try {
@@ -79,10 +59,10 @@ async function run() {
 
     // Query for acquiring the list of files changed by this PR + the graphql API ratelimit
     const gql_query_list_PR_files = `
-      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $MAX_GH_GQL_PAGINATION: Int!) {
+      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $maximumGitHubGraphQLPagination: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pullRequestNumber) {
-            files(first: $MAX_GH_GQL_PAGINATION) {
+            files(first: $maximumGitHubGraphQLPagination) {
               edges {
                 node {
                   path
@@ -134,7 +114,7 @@ async function run() {
           owner,
           name: repo,
           pullRequestNumber,
-          MAX_GH_GQL_PAGINATION,
+          maximumGitHubGraphQLPagination: utils.MAX_GH_GQL_PAGINATION,
           headers: {
             authorization: `Bearer ${token}`
           }
@@ -170,14 +150,14 @@ async function run() {
 
     async function getWorkflows() {
       try {
-        const workflowPathList = getFilesMatchingRegex(HERE_DIR, GITHUB_WORKFLOWS_REGEX)
+        const workflowPathList = utils.getFilesMatchingRegex(utils.HERE_DIR, utils.GITHUB_WORKFLOWS_REGEX)
         const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner,
           repo: repo
         })
         const workflowsAPI = new Map(
           workflowsListedByAPI.data.workflows.map((workflow) => [
-            path.join(HERE_DIR, `.github/workflows/${workflow.path}`),
+            path.join(utils.HERE_DIR, `.github/workflows/${workflow.path}`),
             workflow
           ])
         )
