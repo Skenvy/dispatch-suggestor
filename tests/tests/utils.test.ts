@@ -1,11 +1,9 @@
-import * as fs from 'fs'
-import * as path from 'path'
+'use strict'
 
-// Mock the fs and path modules
 jest.mock('fs')
 jest.mock('path')
 
-const { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } = await import('./utils.js')
+const { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } = await import('../../src/utils.js')
 
 describe('getFilesMatchingRegex', () => {
   const mockFiles = new Map<string, string[]>([
@@ -23,10 +21,12 @@ describe('getFilesMatchingRegex', () => {
   ])
 
   beforeEach(() => {
-    ;(fs.readdirSync as jest.Mock)
-      .mockImplementation((dir: string) => mockFiles.get(dir) || [])(fs.statSync as jest.Mock)
-      .mockImplementation((filePath: string) => mockStats.get(filePath) || {})(path.join as jest.Mock)
-      .mockImplementation((...paths: string[]) => paths.join('/'))
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('fs').__setMockFiles(mockFiles)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('fs').__setMockStats(mockStats)
+    // (fs.readdirSync as jest.Mock) .mockImplementation((dir: string) => mockFiles.get(dir) || [])
+    // (fs.statSync as jest.Mock).mockImplementation((filePath: string) => mockStats.get(filePath) || {})
   })
 
   afterEach(() => {
@@ -43,3 +43,6 @@ describe('getFilesMatchingRegex', () => {
     expect(result).toEqual([])
   })
 })
+
+// eslint-disable-next-line jest/no-export
+export {}
