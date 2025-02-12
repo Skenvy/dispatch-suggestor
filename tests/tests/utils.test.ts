@@ -1,4 +1,14 @@
-import { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } from '../src/utils'
+// ESM Mocking is a acid trip.
+import { jest } from '@jest/globals'
+
+// First load from the fixtures.
+import * as fs from '../fixtures/fs'
+
+// Then mock the actual import with identity factory.
+jest.unstable_mockModule('fs', () => fs)
+
+// Then load the UUT
+const { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } = await import('../../src/utils')
 
 /**
  * This is a set of data objects that can be used to construct mocks.
@@ -21,18 +31,11 @@ namespace MockData {
   ])
 }
 
-jest.mock('../src/utils', () => {
-  const originalModule = jest.requireActual('../src/utils')
-  return {
-    __esModule: true,
-    ...originalModule,
-    fs_readDirectory: jest.fn((dir: string) => MockData.fs_readDirectory.get(dir) || []),
-    fs_statSync: jest.fn((filePath: string) => MockData.fs_statSync.get(filePath) || {})
-  }
-})
-
 describe('getFilesMatchingRegex', () => {
-  beforeEach(() => {})
+  beforeEach(() => {
+    fs.readdirSync.mockImplementation((dir: string) => MockData.fs_readDirectory.get(dir) || [])
+    fs.statSync.mockImplementation((filePath: string) => MockData.fs_statSync.get(filePath) || {})
+  })
 
   afterEach(() => {
     jest.resetAllMocks()

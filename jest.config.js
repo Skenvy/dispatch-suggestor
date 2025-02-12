@@ -25,7 +25,6 @@ export default {
   reporters: ['default'],
   resolver: 'ts-jest-resolver',
   roots: ['<rootDir>', '<rootDir>/tests'],
-  setupFiles: ['./tests/jest.global.js'],
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   testPathIgnorePatterns: ['/dist/', '/node_modules/'],
