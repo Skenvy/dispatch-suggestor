@@ -1,6 +1,6 @@
 {
   "name": "@skenvy/dispatch-suggestor",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.",
   "type": "module",
   "keywords": [
