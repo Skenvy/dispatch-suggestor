@@ -42191,7 +42191,7 @@ function parse(src, reviver, options) {
 
 const MAX_GH_GQL_PAGINATION = 100;
 const HERE_DIR = './'; // assume this is running on the default checkout location
-const GITHUB_WORKFLOWS_REGEX = /\/\.github\/workflows\/[^/]+\.ya?ml$/;
+const GITHUB_WORKFLOWS_REGEX = /^\.github\/workflows\/[^/]+\.ya?ml$/;
 function getFilesMatchingRegex(dir, regex) {
     const files = [];
     function readDirectory(directory) {
@@ -42202,7 +42202,7 @@ function getFilesMatchingRegex(dir, regex) {
             if (stat.isDirectory()) {
                 readDirectory(fullPath);
             }
-            else if (regex.test(item)) {
+            else if (regex.test(fullPath)) {
                 files.push(fullPath);
             }
         }
@@ -42301,7 +42301,10 @@ async function run() {
             }
             return files;
         }
+        // TODO remove this unused hider when it eventually becomes used.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const files = await fetchChangedFiles();
+        coreExports.setOutput('list-of-changed-files', files);
         // STEP TWO: Get the set of triggering conditions for all trunk workflows.
         // The rest API for a github_token has a rate limit of 1000/hour/repo. Thats
         // not all that much when this is expected to be geared for a monorepo that
@@ -42345,11 +42348,6 @@ async function run() {
             }
         }
         await getWorkflows();
-        // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
-        console.log('Changed files:', files);
-        // TODO REMOVE THIS LEFTOVER EXAMPLE
-        const time = new Date().toTimeString();
-        coreExports.setOutput('name-of-output', time);
     }
     catch (error) {
         if (error instanceof Error)

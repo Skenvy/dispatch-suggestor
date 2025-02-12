@@ -21,8 +21,8 @@ inputs:
     required: false
     default: 'false'
 outputs:
-  name-of-output:
-    description: 'description'
+  list-of-changed-files:
+    description: 'A list of the files that have been touched by this PR'
 runs:
   using: 'node20'
   main: 'dist/index.js'

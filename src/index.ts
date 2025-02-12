@@ -132,7 +132,10 @@ async function run() {
       return files
     }
 
+    // TODO remove this unused hider when it eventually becomes used.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const files = await fetchChangedFiles()
+    core.setOutput('list-of-changed-files', files)
 
     // STEP TWO: Get the set of triggering conditions for all trunk workflows.
     // The rest API for a github_token has a rate limit of 1000/hour/repo. Thats
@@ -181,13 +184,6 @@ async function run() {
     }
 
     await getWorkflows()
-
-    // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
-    console.log('Changed files:', files)
-
-    // TODO REMOVE THIS LEFTOVER EXAMPLE
-    const time = new Date().toTimeString()
-    core.setOutput('name-of-output', time)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
