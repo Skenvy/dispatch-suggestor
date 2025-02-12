@@ -1,6 +1,9 @@
 # [dispatch-suggestor](https://github.com/Skenvy/dispatch-suggestor)
 [![Test](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/main.yaml/badge.svg?branch=main&event=push)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/main.yaml)
 
+> [!CAUTION]
+> This is not yet passed pre-release development and testing. The rest of this README is a preemptive skeleton that is currently meaningless. It will be updated once the initial development is complete.
+
 Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.
 ```yaml
 - name: Dispatch 📤 Suggestor 📥
