@@ -21,6 +21,7 @@ jobs:
           action.yml
           dist/index.js
           package.json
+          test/integration/*/.github/workflows/*.y*ml
         sparse-checkout-cone-mode: false
     - run: ls -liath .github/workflows/
     - name: Use the action
@@ -37,7 +38,7 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         trunk-branch: main # default
-        checkout-root: 'test/integration/example_a'
+        checkout-root: 'test/integration/example'
         log-workflow-triggers: true
     - name: Get list-of-dispatchable-workflows
       run: echo "${{ steps.action-use-root.outputs.list-of-dispatchable-workflows }}"
