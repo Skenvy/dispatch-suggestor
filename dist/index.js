@@ -42321,10 +42321,7 @@ async function run() {
                     owner: owner,
                     repo: repo
                 });
-                const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [
-                    require$$1.join(checkoutRoot, `.github/workflows/${workflow.path}`),
-                    workflow
-                ]));
+                const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]));
                 // Get details of each workflow
                 console.log('All workflows LOCAL are ', workflowPathList.toString());
                 console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString());

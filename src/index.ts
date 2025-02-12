@@ -4,7 +4,6 @@ import { graphql } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
 import * as fs from 'fs'
-import * as path from 'path'
 import * as yaml from 'yaml'
 
 import * as utils from './utils.js'
@@ -156,12 +155,7 @@ async function run() {
           owner: owner,
           repo: repo
         })
-        const workflowsAPI = new Map(
-          workflowsListedByAPI.data.workflows.map((workflow) => [
-            path.join(checkoutRoot, `.github/workflows/${workflow.path}`),
-            workflow
-          ])
-        )
+        const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]))
         // Get details of each workflow
         console.log('All workflows LOCAL are ', workflowPathList.toString())
         console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString())
