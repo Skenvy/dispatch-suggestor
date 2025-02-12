@@ -25,11 +25,19 @@ jobs:
     - run: ls -liath .github/workflows/
     - name: Use the action
       uses: ./
-      id: action-use
+      id: action-use-root
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         trunk-branch: main # default
         checkout-root: '.' # default
-        log-event-payload: true
-    - name: Get the output time
-      run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"
+        log-workflow-triggers: true
+    - name: Use the action
+      uses: ./
+      id: action-use
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        trunk-branch: main # default
+        checkout-root: 'test/integration/example_a'
+        log-workflow-triggers: true
+    - name: Get list-of-dispatchable-workflows
+      run: echo "${{ steps.action-use-root.outputs.list-of-dispatchable-workflows }}"

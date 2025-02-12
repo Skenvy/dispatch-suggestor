@@ -42329,15 +42329,15 @@ async function run() {
                 for (const workflowPath of workflowsFound) {
                     const workflowContent = fs.readFileSync(workflowPath, 'utf8');
                     const workflow = parse(workflowContent);
-                    if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
-                        if ('name' in workflow) {
-                            console.log(`Workflow Name: ${workflow.name}`);
+                    if (coreExports.getInput('log-workflow-triggers') != 'false') {
+                        if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
+                            console.log(`Workflow Path: ${workflowPath}`);
+                            if ('name' in workflow) {
+                                console.log(`Workflow Name: ${workflow.name}`);
+                            }
+                            console.log(`On: ${JSON.stringify(workflow.on, null, 2)}`);
+                            // NEXT BRANCH: Implement the logic here to parse to `workflow.on`
                         }
-                        else {
-                            console.log(`Workflow Name(less): ${workflowPath}`);
-                        }
-                        console.log(`On: ${JSON.stringify(workflow.on, null, 2)}`);
-                        // NEXT BRANCH: Implement the logic here to parse to `workflow.on`
                     }
                 }
             }

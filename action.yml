@@ -17,7 +17,11 @@ inputs:
     required: false
     default: './'
   log-event-payload:
-    description: 'If not false, will print the whole triggering event payload'
+    description: 'If not false, will print the whole triggering event payload.'
+    required: false
+    default: 'false'
+  log-workflow-triggers:
+    description: 'If not false, will print the triggers for all dispatchable workflows.'
     required: false
     default: 'false'
 outputs:
