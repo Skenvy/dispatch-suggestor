@@ -6,12 +6,16 @@ branding:
   color: 'purple'
 inputs:
   github_token:
-    description: 'description'
+    description: 'Requires `permissions: { actions: read, contents: read, pull-requests: read }`'
     required: true
   trunk-branch:
     description: 'Name of the trunk branch, if not main'
     required: false
     default: 'main'
+  checkout-root:
+    description: 'The path to the root folder of the checked out repo, relative to the default working-directory, `$GITHUB_WORKSPACE`. Should be the same as the value provided to `@actions/checkout` `with.path:`, or default.'
+    required: false
+    default: './'
   log-event-payload:
     description: 'If not false, will print the whole triggering event payload'
     required: false

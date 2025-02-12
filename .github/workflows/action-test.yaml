@@ -27,7 +27,9 @@ jobs:
       uses: ./
       id: action-use
       with:
-        name-of-input: 'Yikes'
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        trunk-branch: main
+        checkout-root: ./
+        log-event-payload: true
     - name: Get the output time
       run: echo "The time was ${{ steps.action-use.outputs.name-of-output }}"

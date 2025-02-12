@@ -11,10 +11,6 @@ import * as utils from './utils.js'
 
 async function run() {
   try {
-    // TODO REMOVE THIS LEFTOVER EXAMPLE
-    const time = new Date().toTimeString()
-    core.setOutput('name-of-output', time)
-
     // Get the JSON webhook payload for the event that triggered the workflow
     if (core.getInput('log-event-payload') != 'false') {
       console.log('The event payload:', JSON.stringify(github.context.payload, undefined, 2))
@@ -47,7 +43,6 @@ async function run() {
     const owner = context.repo.owner
     const repo = context.repo.repo
     const pullRequestNumber = await getPRNumber()
-    // const trunkBranch = core.getInput('trunk-branch')
     console.log('owner:', owner)
     console.log('repo:', repo)
     console.log('pullRequestNumber:', pullRequestNumber)
@@ -147,10 +142,15 @@ async function run() {
     // is expecting the workflow that runs it to have run actions/checkout.
 
     // const branchContext = context.payload.pull_request.head.ref
+    // const trunkBranch = core.getInput('trunk-branch') // check against the name of branch in push trigger conditions
+    const checkoutRoot = core.getInput('checkout-root')
+    if (!fs.existsSync(checkoutRoot)) {
+      core.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`)
+    }
 
     async function getWorkflows() {
       try {
-        const workflowPathList = utils.getFilesMatchingRegex(utils.HERE_DIR, utils.GITHUB_WORKFLOWS_REGEX)
+        const workflowPathList = utils.getFilesMatchingRegex(checkoutRoot, utils.GITHUB_WORKFLOWS_REGEX)
         const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner,
           repo: repo
@@ -184,6 +184,10 @@ async function run() {
 
     // TODO Remove temporarily log the files a second time to stop it complaining about files being unused.
     console.log('Changed files:', files)
+
+    // TODO REMOVE THIS LEFTOVER EXAMPLE
+    const time = new Date().toTimeString()
+    core.setOutput('name-of-output', time)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
