@@ -1,17 +1,17 @@
-'use strict'
+import { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } from '../src/utils'
 
-jest.mock('fs')
-jest.mock('path')
-
-const { getFilesMatchingRegex, GITHUB_WORKFLOWS_REGEX } = await import('../../src/utils.js')
-
-describe('getFilesMatchingRegex', () => {
-  const mockFiles = new Map<string, string[]>([
+/**
+ * This is a set of data objects that can be used to construct mocks.
+ */
+// eslint-disable-next-line @typescript-eslint/no-namespace
+namespace MockData {
+  // eslint-disable-next-line jest/no-export
+  export const fs_readDirectory = new Map<string, string[]>([
     ['/test-dir', ['file1.txt', 'file2.yaml', 'subdir']],
     ['/test-dir/subdir', ['file3.yml', 'file4.js']]
   ])
-
-  const mockStats = new Map<string, { isDirectory: () => boolean }>([
+  // eslint-disable-next-line jest/no-export
+  export const fs_statSync = new Map<string, { isDirectory: () => boolean }>([
     ['/test-dir', { isDirectory: () => true }],
     ['/test-dir/file1.txt', { isDirectory: () => false }],
     ['/test-dir/file2.yaml', { isDirectory: () => false }],
@@ -19,15 +19,20 @@ describe('getFilesMatchingRegex', () => {
     ['/test-dir/subdir/file3.yml', { isDirectory: () => false }],
     ['/test-dir/subdir/file4.js', { isDirectory: () => false }]
   ])
+}
 
-  beforeEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('fs').__setMockFiles(mockFiles)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('fs').__setMockStats(mockStats)
-    // (fs.readdirSync as jest.Mock) .mockImplementation((dir: string) => mockFiles.get(dir) || [])
-    // (fs.statSync as jest.Mock).mockImplementation((filePath: string) => mockStats.get(filePath) || {})
-  })
+jest.mock('../src/utils', () => {
+  const originalModule = jest.requireActual('../src/utils')
+  return {
+    __esModule: true,
+    ...originalModule,
+    fs_readDirectory: jest.fn((dir: string) => MockData.fs_readDirectory.get(dir) || []),
+    fs_statSync: jest.fn((filePath: string) => MockData.fs_statSync.get(filePath) || {})
+  }
+})
+
+describe('getFilesMatchingRegex', () => {
+  beforeEach(() => {})
 
   afterEach(() => {
     jest.resetAllMocks()
