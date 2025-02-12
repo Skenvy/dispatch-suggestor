@@ -158,15 +158,14 @@ async function run() {
         })
         const workflowsAPI = new Map(
           workflowsListedByAPI.data.workflows.map((workflow) => [
-            path.join(utils.HERE_DIR, `.github/workflows/${workflow.path}`),
+            path.join(checkoutRoot, `.github/workflows/${workflow.path}`),
             workflow
           ])
         )
         // Get details of each workflow
         console.log('All workflows LOCAL are ', workflowPathList.toString())
-        console.log('All workflows API are ', workflowsAPI.keys().toString())
+        console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString())
         const workflowsFound = workflowPathList.filter((x) => workflowsAPI.has(x))
-        console.log('Does this path matcher and dispatch checker work?')
         for (const workflowPath of workflowsFound) {
           const workflowContent = fs.readFileSync(workflowPath, 'utf8')
           const workflow = yaml.parse(workflowContent)

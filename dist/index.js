@@ -42190,7 +42190,6 @@ function parse(src, reviver, options) {
 }
 
 const MAX_GH_GQL_PAGINATION = 100;
-const HERE_DIR = './'; // assume this is running on the default checkout location
 const GITHUB_WORKFLOWS_REGEX = /^\.github\/workflows\/[^/]+\.ya?ml$/;
 function getFilesMatchingRegex(dir, regex) {
     const files = [];
@@ -42323,14 +42322,13 @@ async function run() {
                     repo: repo
                 });
                 const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [
-                    require$$1.join(HERE_DIR, `.github/workflows/${workflow.path}`),
+                    require$$1.join(checkoutRoot, `.github/workflows/${workflow.path}`),
                     workflow
                 ]));
                 // Get details of each workflow
                 console.log('All workflows LOCAL are ', workflowPathList.toString());
-                console.log('All workflows API are ', workflowsAPI.keys().toString());
+                console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString());
                 const workflowsFound = workflowPathList.filter((x) => workflowsAPI.has(x));
-                console.log('Does this path matcher and dispatch checker work?');
                 for (const workflowPath of workflowsFound) {
                     const workflowContent = fs.readFileSync(workflowPath, 'utf8');
                     const workflow = parse(workflowContent);

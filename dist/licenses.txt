@@ -1,5 +1,5 @@
 Name: @skenvy/dispatch-suggestor
-Version: 0.0.1
+Version: 1.0.0
 License: Apache-2.0
 Private: true
 Description: Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.
