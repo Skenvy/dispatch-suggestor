@@ -86,6 +86,7 @@ lint:
 # from transpiling the checked in typescript, to make sure they're in sync.
 .PHONY: bundle
 bundle: clean
+	rm -rf dist
 	$(NPM) run bundle
 
 .PHONY: verify_transpiled_checkin

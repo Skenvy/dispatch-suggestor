@@ -1,0 +1,44 @@
+name: Action Test
+on:
+  pull_request:
+defaults:
+  run:
+    shell: bash
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+jobs:
+  test:
+    name: Test the Action
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        sparse-checkout: |
+          .github/workflows/*.y*ml
+          action.yml
+          dist/index.js
+          package.json
+          test/integration/*/.github/workflows/*.y*ml
+        sparse-checkout-cone-mode: false
+    - run: ls -liath .github/workflows/
+    - name: Use the action
+      uses: ./
+      id: action-use-root
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        trunk-branch: main # default
+        checkout-root: '.' # default
+        log-workflow-triggers: true
+    - name: Use the action
+      uses: ./
+      id: action-use
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        trunk-branch: main # default
+        checkout-root: 'test/integration/example'
+        log-workflow-triggers: true
+    - name: Get list-of-dispatchable-workflows
+      run: echo "${{ steps.action-use-root.outputs.list-of-dispatchable-workflows }}"
