@@ -132,8 +132,6 @@ async function run() {
       return files
     }
 
-    // TODO remove this unused hider when it eventually becomes used.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const files = await fetchChangedFiles()
     core.setOutput('list-of-changed-files', files)
 
@@ -144,7 +142,7 @@ async function run() {
     // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
     // is expecting the workflow that runs it to have run actions/checkout.
 
-    // const branchContext = context.payload.pull_request.head.ref
+    // const branchContext = context.payload.pull_request.head.ref // use when templating the dispatch trigger URL
     // const trunkBranch = core.getInput('trunk-branch') // check against the name of branch in push trigger conditions
     const checkoutRoot = core.getInput('checkout-root')
     if (!fs.existsSync(checkoutRoot)) {
@@ -166,16 +164,20 @@ async function run() {
         )
         // Get details of each workflow
         console.log('All workflows LOCAL are ', workflowPathList.toString())
-        console.log('All workflows API are ', workflowsAPI.toString())
+        console.log('All workflows API are ', workflowsAPI.keys().toString())
+        const workflowsFound = workflowPathList.filter((x) => workflowsAPI.has(x))
         console.log('Does this path matcher and dispatch checker work?')
-        for (const workflowPath of workflowPathList) {
-          if (workflowsAPI.has(workflowPath)) {
-            const workflowContent = fs.readFileSync(workflowPath, 'utf8')
-            const workflowYaml = yaml.parse(workflowContent)
-            if (workflowYaml.on.workflow_dispatch) {
-              console.log(`Workflow: ${workflowYaml.name}`)
-              console.log(`On: ${JSON.stringify(workflowYaml.on, null, 2)}`)
+        for (const workflowPath of workflowsFound) {
+          const workflowContent = fs.readFileSync(workflowPath, 'utf8')
+          const workflow = yaml.parse(workflowContent)
+          if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
+            if ('name' in workflow) {
+              console.log(`Workflow Name: ${workflow.name}`)
+            } else {
+              console.log(`Workflow Name(less): ${workflowPath}`)
             }
+            console.log(`On: ${JSON.stringify(workflow.on, null, 2)}`)
+            // NEXT BRANCH: Implement the logic here to parse to `workflow.on`
           }
         }
       } catch (error) {
@@ -183,7 +185,8 @@ async function run() {
       }
     }
 
-    await getWorkflows()
+    const dispatchableWorkflows = await getWorkflows()
+    core.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }

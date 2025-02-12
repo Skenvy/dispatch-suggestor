@@ -23,6 +23,8 @@ inputs:
 outputs:
   list-of-changed-files:
     description: 'A list of the files that have been touched by this PR'
+  list-of-dispatchable-workflows:
+    description: 'A list of the workflows found in this repo that have workflow_dispatch triggers.'
 runs:
   using: 'node20'
   main: 'dist/index.js'
