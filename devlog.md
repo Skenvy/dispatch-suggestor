@@ -23,6 +23,9 @@ and doing what the docs say, instead of fixing anything or even managing to just
 TLDR rollup has been so frustrating to setup as part of this template I ended up raising two issues on the `actions/typescript-template`, [#1010](https://github.com/actions/typescript-action/issues/1010) and [#1011](https://github.com/actions/typescript-action/issues/1011) (which refs the fix [rollup/plugins #1805](https://github.com/rollup/plugins/issues/1805)).
 
 ## Jest: a tool that mocks _you_
+> [!IMPORTANT]
+> This is probably my most vitriolic devlog addition I've ever included. I want to capture the vibe and sense of frustration when it's fresh to be a genuine take, but this is purely a reflection on how I've attempted to use it. I'm sure there are many people / teams that get value out of this very popular tool, but from my experience trying to use it here, I would not try to use it personally again, at least not until possibly after having had to learn it for use on some project where I don't have the power of choice. There is also a disclaimer that a lot of the time spent wasted on this was also trying to test out what it's like to use co-pilot, so it might be fair to say that co-pilot should also be part of this rant, but it's been useful in other areas so far, this just happened to be something it struggled with, and I credit it's insistence on suggesting to use jest to mock builtins in ESM as if they were the same as mocking user src code in CJS with a lot of the frustration directed at jest in general here.
+
 TLDR if there is actually a way to mock node builtins in ESM, please let me know. I genuinely lost count of how many different things I tried that all got stuck on impossible to solve errors.
 
 Holy shit. That's about all there is to say. I have never experienced a tool I hated more than jest mocks. It is straight up impossible to use.
