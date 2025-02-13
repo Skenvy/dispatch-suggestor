@@ -42190,18 +42190,20 @@ function parse(src, reviver, options) {
 }
 
 const MAX_GH_GQL_PAGINATION = 100;
-const GITHUB_WORKFLOWS_REGEX = /^\.github\/workflows\/[^/]+\.ya?ml$/;
+const GITHUB_WORKFLOWS_REGEX = /\.github\/workflows\/[^/]+\.ya?ml$/;
 function getFilesMatchingRegex(dir, regex) {
+    const sanitisedDir = dir.slice(-1) === '/' ? dir.slice(0, -1) : dir;
     const files = [];
     function readDirectory(directory) {
         const items = fs.readdirSync(directory);
+        const rgx = sanitisedDir === '.' ? new RegExp(String.raw `^${regex}`) : new RegExp(String.raw `^${sanitisedDir}/${regex}`);
         for (const item of items) {
             const fullPath = require$$1.join(directory, item);
             const stat = fs.statSync(fullPath);
             if (stat.isDirectory()) {
                 readDirectory(fullPath);
             }
-            else if (regex.test(fullPath)) {
+            else if (rgx.test(fullPath)) {
                 files.push(fullPath);
             }
         }
@@ -42316,11 +42318,21 @@ async function run() {
         }
         async function getWorkflows() {
             try {
+                // Get the list of files existing locally, and hit the API.
                 const workflowPathList = getFilesMatchingRegex(checkoutRoot, GITHUB_WORKFLOWS_REGEX);
                 const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
                     owner: owner,
                     repo: repo
                 });
+                const ratelimitInfo = {};
+                ratelimitInfo['x-ratelimit-limit'] = workflowsListedByAPI.headers['x-ratelimit-limit'];
+                ratelimitInfo['x-ratelimit-remaining'] = workflowsListedByAPI.headers['x-ratelimit-remaining'];
+                ratelimitInfo['x-ratelimit-reset'] = workflowsListedByAPI.headers['x-ratelimit-reset'];
+                ratelimitInfo['x-ratelimit-resource'] = workflowsListedByAPI.headers['x-ratelimit-resource'];
+                ratelimitInfo['x-ratelimit-used'] = workflowsListedByAPI.headers['x-ratelimit-used'];
+                console.log('REST Rate Limit Info:', ratelimitInfo);
+                coreExports.notice(`REST Rate Limit Info: ${JSON.stringify(ratelimitInfo)}`);
+                // Remap the API's response
                 const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]));
                 // Get details of each workflow
                 console.log('All workflows LOCAL are ', workflowPathList.toString());
