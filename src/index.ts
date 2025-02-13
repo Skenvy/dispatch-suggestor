@@ -150,11 +150,21 @@ async function run() {
 
     async function getWorkflows() {
       try {
+        // Get the list of files existing locally, and hit the API.
         const workflowPathList = utils.getFilesMatchingRegex(checkoutRoot, utils.GITHUB_WORKFLOWS_REGEX)
         const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner,
           repo: repo
         })
+        const ratelimitInfo: { [header: string]: string | number | undefined } = {}
+        ratelimitInfo['x-ratelimit-limit'] = workflowsListedByAPI.headers['x-ratelimit-limit']
+        ratelimitInfo['x-ratelimit-remaining'] = workflowsListedByAPI.headers['x-ratelimit-remaining']
+        ratelimitInfo['x-ratelimit-reset'] = workflowsListedByAPI.headers['x-ratelimit-reset']
+        ratelimitInfo['x-ratelimit-resource'] = workflowsListedByAPI.headers['x-ratelimit-resource']
+        ratelimitInfo['x-ratelimit-used'] = workflowsListedByAPI.headers['x-ratelimit-used']
+        console.log('REST Rate Limit Info:', ratelimitInfo)
+        core.notice(`REST Rate Limit Info: ${JSON.stringify(ratelimitInfo)}`)
+        // Remap the API's response
         const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]))
         // Get details of each workflow
         console.log('All workflows LOCAL are ', workflowPathList.toString())
