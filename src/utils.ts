@@ -4,6 +4,13 @@ import * as path from 'path'
 export const MAX_GH_GQL_PAGINATION = 100
 export const GITHUB_WORKFLOWS_REGEX = /\.github\/workflows\/[^/]+\.ya?ml$/
 
+/**
+ * Returns the directory of a root folder searched within for matches to the
+ * regex, and a list of all files under that root folder that matched it.
+ * @param dir
+ * @param regex
+ * @returns
+ */
 export function getFilesMatchingRegex(dir: string, regex: RegExp): { directory: string; paths: string[] } {
   // Use path.join to sanitise, because it's what we use to generate the full
   // path anyway. It will get rid of any initial './' if that's not the whole
@@ -28,7 +35,13 @@ export function getFilesMatchingRegex(dir: string, regex: RegExp): { directory: 
       if (stat.isDirectory()) {
         readDirectory(fullPath)
       } else if (rgx.test(fullPath)) {
-        files.push(fullPath)
+        // It should have matched using the regex source, so we can now pull the
+        // original regex matching end part out and not keep the sanitisedDir,
+        // now that we don't need it to regex for the repo root directory.
+        const matched = fullPath.match(regex)
+        if (matched && matched.length > 0) {
+          files.push(matched[0])
+        }
       }
     }
   }
@@ -37,4 +50,14 @@ export function getFilesMatchingRegex(dir: string, regex: RegExp): { directory: 
     directory: sanitisedDir,
     paths: files
   }
+}
+
+/**
+ * Returns the root directory searched within for files that match the pattern
+ * for github workflows, and a list of all workflow files found.
+ * @param dir
+ * @returns
+ */
+export function getFilesMatchingGithubWorkflows(dir: string): { directory: string; paths: string[] } {
+  return getFilesMatchingRegex(dir, GITHUB_WORKFLOWS_REGEX)
 }

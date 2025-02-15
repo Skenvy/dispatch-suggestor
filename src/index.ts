@@ -4,6 +4,7 @@ import { graphql } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
 import * as fs from 'fs'
+import * as path from 'path'
 import * as yaml from 'yaml'
 
 import * as utils from './utils.js'
@@ -151,7 +152,7 @@ async function run() {
     async function getWorkflows() {
       try {
         // Get the list of files existing locally, and hit the API.
-        const workflowPathList = utils.getFilesMatchingRegex(checkoutRoot, utils.GITHUB_WORKFLOWS_REGEX)
+        const workflowPathList = utils.getFilesMatchingGithubWorkflows(checkoutRoot)
         const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner,
           repo: repo
@@ -167,11 +168,16 @@ async function run() {
         // Remap the API's response
         const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]))
         // Get details of each workflow
-        console.log('All workflows LOCAL are ', workflowPathList.toString())
+        console.log('All workflows LOCAL are ', workflowPathList.paths.toString())
         console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString())
         const workflowsFound = workflowPathList.paths.filter((x) => workflowsAPI.has(x))
+        // We need the paths and root directory supplied separated from calling
+        // getFilesMatchingGithubWorkflows so we can match only the part of the
+        // paths that matches the workflow regex with the list of workflow paths
+        // returned by the API. But we need to glue them back to the whole path
+        // for finding and reading the yaml.
         for (const workflowPath of workflowsFound) {
-          const workflowContent = fs.readFileSync(workflowPath, 'utf8')
+          const workflowContent = fs.readFileSync(path.join(workflowPathList.directory, workflowPath), 'utf8')
           const workflow = yaml.parse(workflowContent)
           if (core.getInput('log-workflow-triggers') != 'false') {
             if ('on' in workflow && 'workflow_dispatch' in workflow.on) {

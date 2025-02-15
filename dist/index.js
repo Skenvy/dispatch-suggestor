@@ -42191,6 +42191,13 @@ function parse(src, reviver, options) {
 
 const MAX_GH_GQL_PAGINATION = 100;
 const GITHUB_WORKFLOWS_REGEX = /\.github\/workflows\/[^/]+\.ya?ml$/;
+/**
+ * Returns the directory of a root folder searched within for matches to the
+ * regex, and a list of all files under that root folder that matched it.
+ * @param dir
+ * @param regex
+ * @returns
+ */
 function getFilesMatchingRegex(dir, regex) {
     // Use path.join to sanitise, because it's what we use to generate the full
     // path anyway. It will get rid of any initial './' if that's not the whole
@@ -42215,7 +42222,13 @@ function getFilesMatchingRegex(dir, regex) {
                 readDirectory(fullPath);
             }
             else if (rgx.test(fullPath)) {
-                files.push(fullPath);
+                // It should have matched using the regex source, so we can now pull the
+                // original regex matching end part out and not keep the sanitisedDir,
+                // now that we don't need it to regex for the repo root directory.
+                const matched = fullPath.match(regex);
+                if (matched && matched.length > 0) {
+                    files.push(matched[0]);
+                }
             }
         }
     }
@@ -42224,6 +42237,15 @@ function getFilesMatchingRegex(dir, regex) {
         directory: sanitisedDir,
         paths: files
     };
+}
+/**
+ * Returns the root directory searched within for files that match the pattern
+ * for github workflows, and a list of all workflow files found.
+ * @param dir
+ * @returns
+ */
+function getFilesMatchingGithubWorkflows(dir) {
+    return getFilesMatchingRegex(dir, GITHUB_WORKFLOWS_REGEX);
 }
 
 async function run() {
@@ -42333,7 +42355,7 @@ async function run() {
         async function getWorkflows() {
             try {
                 // Get the list of files existing locally, and hit the API.
-                const workflowPathList = getFilesMatchingRegex(checkoutRoot, GITHUB_WORKFLOWS_REGEX);
+                const workflowPathList = getFilesMatchingGithubWorkflows(checkoutRoot);
                 const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
                     owner: owner,
                     repo: repo
@@ -42349,11 +42371,16 @@ async function run() {
                 // Remap the API's response
                 const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]));
                 // Get details of each workflow
-                console.log('All workflows LOCAL are ', workflowPathList.toString());
+                console.log('All workflows LOCAL are ', workflowPathList.paths.toString());
                 console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString());
                 const workflowsFound = workflowPathList.paths.filter((x) => workflowsAPI.has(x));
+                // We need the paths and root directory supplied separated from calling
+                // getFilesMatchingGithubWorkflows so we can match only the part of the
+                // paths that matches the workflow regex with the list of workflow paths
+                // returned by the API. But we need to glue them back to the whole path
+                // for finding and reading the yaml.
                 for (const workflowPath of workflowsFound) {
-                    const workflowContent = fs.readFileSync(workflowPath, 'utf8');
+                    const workflowContent = fs.readFileSync(path.join(workflowPathList.directory, workflowPath), 'utf8');
                     const workflow = parse(workflowContent);
                     if (coreExports.getInput('log-workflow-triggers') != 'false') {
                         if ('on' in workflow && 'workflow_dispatch' in workflow.on) {

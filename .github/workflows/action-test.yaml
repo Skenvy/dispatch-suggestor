@@ -46,7 +46,7 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         # trunk-branch: main # default
-        checkout-root: '../../dispatch-suggestor/test/integration/example'
+        checkout-root: '../dispatch-suggestor/test/integration/example'
         log-workflow-triggers: true
     - name: Get list-of-dispatchable-workflows
       run: echo "${{ steps.action-use-root.outputs.list-of-dispatchable-workflows }}"
