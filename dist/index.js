@@ -42402,7 +42402,9 @@ async function run() {
                         // for the dispatch link to populate the URL with some predetermined
                         // values per known input name. For now their run pages will be
                         // included in the comment with a message that they require input.
-                        if ('inputs' in workflow.on.workflow_dispatch && workflow.on.workflow_dispatch.inputs != null) {
+                        if (workflow.on.workflow_dispatch != null &&
+                            'inputs' in workflow.on.workflow_dispatch &&
+                            workflow.on.workflow_dispatch.inputs != null) {
                             dispatchableWorkflowsThatRequireInputs.push(workflowPath);
                         }
                     }
