@@ -44404,11 +44404,111 @@ async function run() {
         // could have high double digit to triple digit workflows with frequent
         // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
         // is expecting the workflow that runs it to have run actions/checkout.
-        const branchContext = context.payload.pull_request.head.ref; // use when templating the dispatch trigger URL
+        const headBranch = context.payload.pull_request.head.ref; // use when templating the dispatch trigger URL
         const trunkBranch = coreExports.getInput('trunk-branch'); // check against the name of branch in push trigger conditions
         const checkoutRoot = coreExports.getInput('checkout-root');
         if (!fs.existsSync(checkoutRoot)) {
             coreExports.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`);
+        }
+        /**
+         * The logic for parsing the workflow.on.push.branches
+         * @param workflow
+         * @param workflowPath
+         * @returns
+         */
+        function thisPushWouldTriggerOnBranches(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        workflow, workflowPath) {
+            // Only branches is supposed to be used with the negating case. Check the
+            // trunk IS one of the patterns, but also that the triggering headBranch
+            // isn't. Branches can start with ! so we have to filter through all.
+            let trunkWouldTriggerThis = false;
+            let headWouldTriggerThis = false;
+            let positiveCheck;
+            let onBranch;
+            const onBranches = workflow.on.push.branches;
+            for (const _onBranch of onBranches) {
+                // Check each "would trigger" through all triggers in order.
+                // First check for inverse condition / sanitise branch
+                positiveCheck = _onBranch.slice(0, 1) != '!';
+                onBranch = positiveCheck ? _onBranch : _onBranch.slice(1);
+                // For both refs, test the pattern against the ref. If the ref
+                // matches the pattern, then apply the inverse of the inverse
+                // condition. Otherwise leave it as its current value.
+                trunkWouldTriggerThis = minimatch(trunkBranch, onBranch) ? positiveCheck : trunkWouldTriggerThis;
+                headWouldTriggerThis = minimatch(headBranch, onBranch) ? positiveCheck : headWouldTriggerThis;
+            }
+            if (headWouldTriggerThis) {
+                console.log(`Dispatchable workflow triggered by push on branches: Head (this) "${headBranch}" will trigger: ${workflowPath}`);
+            }
+            if (trunkWouldTriggerThis) {
+                console.log(`Dispatchable workflow triggered by push on branches: Trunk "${trunkBranch}" will trigger: ${workflowPath}`);
+            }
+            if (!trunkWouldTriggerThis && !headWouldTriggerThis) {
+                console.log(`Dispatchable workflow triggered by push on branches: Neither trunk nor head would trigger this: ${workflowPath}`);
+            }
+            return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
+        }
+        /**
+         * The logic for parsing the workflow.on.push.branches-ignore
+         * @param workflow
+         * @param workflowPath
+         * @returns
+         */
+        function thisPushWouldTriggerOnBranchesIgnore(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        workflow, workflowPath) {
+            // If branches-ignore is present, no need to check for negation.
+            const trunkWouldTriggerThis = !workflow.on.push['branches-ignore']
+                .map((branch) => minimatch(trunkBranch, branch))
+                .includes(true);
+            const headWouldTriggerThis = !workflow.on.push['branches-ignore']
+                .map((branch) => minimatch(headBranch, branch))
+                .includes(true);
+            if (trunkWouldTriggerThis) {
+                console.log(`Dispatchable workflow triggered by push on branches-ignore: Trunk "${trunkBranch}" will trigger: ${workflowPath}`);
+            }
+            if (headWouldTriggerThis) {
+                console.log(`Dispatchable workflow triggered by push on branches-ignore: Head (this) "${headBranch}" will trigger: ${workflowPath}`);
+            }
+            return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
+        }
+        function thisPushWouldTriggerOnTags(workflowPath) {
+            console.log(`Dispatchable workflow triggered by push on <tags|tags-ignore>: Ignoring this workflow: ${workflowPath}`);
+            return { head: false, trunk: false };
+        }
+        /**
+         * The logic for parsing the workflow.on.push.<branches|branches-ignore>.
+         * Returns an object that provides _.head and _.trunk as true if those refs
+         * are matched by the ordered globs on the <branches|branches-ignore>, and
+         * false if they are not matched, or negatively matched. Returns false for
+         * both if neither the <branches|branches-ignore> field exists, as this does
+         * not care about tag refs.
+         * @param workflow
+         * @param workflowPath
+         * @returns
+         */
+        // Any required from output of yaml.parse
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        function thisPushWouldTriggerOnAPushToRef(workflow, workflowPath) {
+            // 'branches-ignore' and 'branches' are mutually exclusive.
+            if ('branches-ignore' in workflow.on.push && workflow.on.push['branches-ignore'] != null) {
+                return thisPushWouldTriggerOnBranchesIgnore(workflow, workflowPath);
+            }
+            else if ('branches' in workflow.on.push && workflow.on.push.branches != null) {
+                return thisPushWouldTriggerOnBranches(workflow, workflowPath);
+            }
+            else {
+                return thisPushWouldTriggerOnTags(workflowPath);
+            }
+        }
+        // Right now we only want to comment for dispatchable workflows that would
+        // trigger on pushes to the trunk but ignore those that have already been
+        // triggered by pushes to the non-trunk headref. This abstraction exists in
+        // case later on we want to handle an option to include any branch that will
+        // be triggered on the trunk regardless if they have already been triggered.
+        function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo) {
+            return triggersOnPushTo.trunk ? !triggersOnPushTo.head : false;
         }
         async function getWorkflows() {
             try {
@@ -44439,13 +44539,15 @@ async function run() {
                 // for finding and reading the yaml.
                 const dispatchableWorkflowsThatRequireInputs = [];
                 const dispatchableWorkflowsTriggeredByPush = [];
+                const dispatchableWorkflowsTriggeredByPushThatDontRequireInputs = [];
                 // NOW WE HAVE THE LIST OF WORKFLOWS, we can iterate them to check ON's.
                 for (const workflowPath of workflowsFound) {
                     const workflowContent = fs.readFileSync(path$1.join(workflowPathList.directory, workflowPath), 'utf8');
                     const workflow = parse(workflowContent);
                     if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
-                        // Now we are only dealing with dispatchable workflows.
-                        // Print some stuff about the thing we're parsing now.
+                        ////////////////////////////////////////////////////////////////////
+                        // Now we are only dealing with dispatchable workflows only.
+                        ////////////////////////////////////////////////////////////////////
                         if (coreExports.getInput('log-workflow-triggers') != 'false') {
                             console.log(`Workflow Path: ${workflowPath}`);
                             if ('name' in workflow) {
@@ -44469,41 +44571,39 @@ async function run() {
                             dispatchableWorkflowsThatRequireInputs.push(workflowPath);
                             console.log(`Dispatchable workflow that takes inputs: ${workflowPath}`);
                         }
-                        // Check and gather all dispatchables that aren't triggered on push
+                        // Check and gather all dispatchables that are triggered on push
                         if ('push' in workflow.on) {
-                            // dispatchableWorkflowsTriggeredByPush.push(workflowPath)
                             console.log(`Dispatchable workflow triggered by push: ${workflowPath}`);
-                            // 'branches-ignore' and 'branches' are mutually exclusive
-                            if ('branches-ignore' in workflow.on.push && workflow.on.push['branches-ignore'] != null) {
-                                // Check the trunk is NOT one of the ignore patterns
-                                if (workflow.on.push['branches-ignore']
-                                    .map((branch) => minimatch(trunkBranch, branch))
-                                    .includes(true)) {
-                                    // If the trunk branch is ignored by this workflow, no include
-                                    console.log(`Dispatchable workflow triggered by push but ignore's trunk: ${workflowPath}`);
-                                }
-                            }
-                            else if ('branches' in workflow.on.push && workflow.on.push.branches != null) {
-                                // Check the trunk IS one of the patterns, but also that
-                                // the triggering branchContext (the head ref) isn't.
-                                // Branches can start with ! so we have to filter through all.
-                                let trunkWouldTriggerThis;
-                                let headWouldTriggerThis;
-                                for (const b of workflow.on.push.branches) {
-                                    // Check each "would trigger" through all triggers in order.
-                                }
+                            const triggersOnPushTo = thisPushWouldTriggerOnAPushToRef(workflow, workflowPath);
+                            if (weWantToMentionThisWorkflowInTheComment(triggersOnPushTo)) {
+                                dispatchableWorkflowsTriggeredByPush.push(workflowPath);
                             }
                         }
                         else {
                             console.log(`Dispatchable workflow not triggered by push: ${workflowPath}`);
                         }
+                        for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
+                            if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
+                                console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${workflowPath}`);
+                            }
+                            else {
+                                dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
+                            }
+                        }
+                        ////////////////////////////////////////////////////////////////////
+                        // We're now finished parsing dispatchable workflows.
+                        ////////////////////////////////////////////////////////////////////
                     }
                 }
+                return dispatchableWorkflowsTriggeredByPushThatDontRequireInputs;
             }
             catch (error) {
                 console.error('Error fetching workflows:', error);
+                coreExports.setFailed(`Error fetching workflows: ${error}`);
+                return [];
             }
         }
+        // TODO NEXT BRANCH: Go back through the branches|branches-ignore checkers and check against changed paths!!!!
         const dispatchableWorkflows = await getWorkflows();
         coreExports.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows);
     }
