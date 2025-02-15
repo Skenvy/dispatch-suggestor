@@ -6,6 +6,7 @@ import { Octokit } from '@octokit/rest'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'yaml'
+import { minimatch } from 'minimatch'
 
 import * as utils from './utils.js'
 
@@ -142,8 +143,8 @@ async function run() {
     // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
     // is expecting the workflow that runs it to have run actions/checkout.
 
-    // const branchContext = context.payload.pull_request.head.ref // use when templating the dispatch trigger URL
-    // const trunkBranch = core.getInput('trunk-branch') // check against the name of branch in push trigger conditions
+    const branchContext = context.payload.pull_request.head.ref // use when templating the dispatch trigger URL
+    const trunkBranch = core.getInput('trunk-branch') // check against the name of branch in push trigger conditions
     const checkoutRoot = core.getInput('checkout-root')
     if (!fs.existsSync(checkoutRoot)) {
       core.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`)
@@ -177,6 +178,8 @@ async function run() {
         // returned by the API. But we need to glue them back to the whole path
         // for finding and reading the yaml.
         const dispatchableWorkflowsThatRequireInputs: string[] = []
+        const dispatchableWorkflowsTriggeredByPush: string[] = []
+        // NOW WE HAVE THE LIST OF WORKFLOWS, we can iterate them to check ON's.
         for (const workflowPath of workflowsFound) {
           const workflowContent = fs.readFileSync(path.join(workflowPathList.directory, workflowPath), 'utf8')
           const workflow = yaml.parse(workflowContent)
@@ -189,7 +192,6 @@ async function run() {
                 console.log(`Workflow Name: ${workflow.name}`)
               }
               console.log(`On: ${JSON.stringify(workflow.on, null, 2)}`)
-              // NEXT BRANCH: Implement the logic here to parse to `workflow.on`
             }
             // Check if the dispatch requires inputs, because this is something
             // we can't magically know about. Perhaps a TODO if it ever matters
@@ -204,7 +206,38 @@ async function run() {
               'inputs' in workflow.on.workflow_dispatch &&
               workflow.on.workflow_dispatch.inputs != null
             ) {
+              // Could test whether each input has <input_id>.required or not!
+              // At the moment just consider any input listed as too much.
               dispatchableWorkflowsThatRequireInputs.push(workflowPath)
+              console.log(`Dispatchable workflow that takes inputs: ${workflowPath}`)
+            }
+            // Check and gather all dispatchables that aren't triggered on push
+            if ('push' in workflow.on) {
+              // dispatchableWorkflowsTriggeredByPush.push(workflowPath)
+              console.log(`Dispatchable workflow triggered by push: ${workflowPath}`)
+              // 'branches-ignore' and 'branches' are mutually exclusive
+              if ('branches-ignore' in workflow.on.push && workflow.on.push['branches-ignore'] != null) {
+                // Check the trunk is NOT one of the ignore patterns
+                if (
+                  workflow.on.push['branches-ignore']
+                    .map((branch: string) => minimatch(trunkBranch, branch))
+                    .includes(true)
+                ) {
+                  // If the trunk branch is ignored by this workflow, no include
+                  console.log(`Dispatchable workflow triggered by push but ignore's trunk: ${workflowPath}`)
+                }
+              } else if ('branches' in workflow.on.push && workflow.on.push.branches != null) {
+                // Check the trunk IS one of the patterns, but also that
+                // the triggering branchContext (the head ref) isn't.
+                // Branches can start with ! so we have to filter through all.
+                let trunkWouldTriggerThis: boolean
+                let headWouldTriggerThis: boolean
+                for (const b of workflow.on.push.branches) {
+                  // Check each "would trigger" through all triggers in order.
+                }
+              }
+            } else {
+              console.log(`Dispatchable workflow not triggered by push: ${workflowPath}`)
             }
           }
         }
