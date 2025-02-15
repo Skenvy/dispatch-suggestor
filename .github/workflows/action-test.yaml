@@ -29,16 +29,24 @@ jobs:
       id: action-use-root
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        trunk-branch: main # default
-        checkout-root: '.' # default
+        # trunk-branch: main # default
+        # checkout-root: '.' # default
         log-workflow-triggers: true
     - name: Use the action
       uses: ./
-      id: action-use
+      id: action-use-inner
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        trunk-branch: main # default
+        # trunk-branch: main # default
         checkout-root: 'test/integration/example'
+        log-workflow-triggers: true
+    - name: Use the action
+      uses: ./
+      id: action-use-outer
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # trunk-branch: main # default
+        checkout-root: '../../dispatch-suggestor/test/integration/example'
         log-workflow-triggers: true
     - name: Get list-of-dispatchable-workflows
       run: echo "${{ steps.action-use-root.outputs.list-of-dispatchable-workflows }}"

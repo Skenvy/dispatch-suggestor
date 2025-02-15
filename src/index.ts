@@ -169,7 +169,7 @@ async function run() {
         // Get details of each workflow
         console.log('All workflows LOCAL are ', workflowPathList.toString())
         console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString())
-        const workflowsFound = workflowPathList.filter((x) => workflowsAPI.has(x))
+        const workflowsFound = workflowPathList.paths.filter((x) => workflowsAPI.has(x))
         for (const workflowPath of workflowsFound) {
           const workflowContent = fs.readFileSync(workflowPath, 'utf8')
           const workflow = yaml.parse(workflowContent)

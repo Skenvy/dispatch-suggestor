@@ -6,12 +6,12 @@ import require$$0 from 'os';
 import require$$0$1 from 'crypto';
 import * as fs from 'fs';
 import fs__default from 'fs';
-import * as require$$1 from 'path';
-import require$$1__default from 'path';
+import * as path from 'path';
+import path__default from 'path';
 import require$$2$1 from 'http';
 import require$$3$1 from 'https';
 import require$$0$4 from 'net';
-import require$$1$1 from 'tls';
+import require$$1 from 'tls';
 import require$$4$1 from 'events';
 import require$$0$3 from 'assert';
 import require$$0$2 from 'util';
@@ -20,14 +20,14 @@ import require$$7 from 'buffer';
 import require$$8 from 'querystring';
 import require$$14 from 'stream/web';
 import require$$0$7 from 'node:stream';
-import require$$1$2 from 'node:util';
+import require$$1$1 from 'node:util';
 import require$$0$6 from 'node:events';
 import require$$0$8 from 'worker_threads';
 import require$$2$2 from 'perf_hooks';
 import require$$5 from 'util/types';
 import require$$4$2 from 'async_hooks';
-import require$$1$3 from 'console';
-import require$$1$4 from 'url';
+import require$$1$2 from 'console';
+import require$$1$3 from 'url';
 import require$$3$2 from 'zlib';
 import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
@@ -407,7 +407,7 @@ var hasRequiredTunnel$1;
 function requireTunnel$1 () {
 	if (hasRequiredTunnel$1) return tunnel$1;
 	hasRequiredTunnel$1 = 1;
-	var tls = require$$1$1;
+	var tls = require$$1;
 	var http = require$$2$1;
 	var https = require$$3$1;
 	var events = require$$4$1;
@@ -1789,7 +1789,7 @@ function requireSbmh () {
 	 * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
 	 */
 	const EventEmitter = require$$0$6.EventEmitter;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 
 	function SBMH (needle) {
 	  if (typeof needle === 'string') {
@@ -1998,7 +1998,7 @@ function requirePartStream () {
 	if (hasRequiredPartStream) return PartStream_1;
 	hasRequiredPartStream = 1;
 
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 	const ReadableStream = require$$0$7.Readable;
 
 	function PartStream (opts) {
@@ -2044,7 +2044,7 @@ function requireHeaderParser () {
 	hasRequiredHeaderParser = 1;
 
 	const EventEmitter = require$$0$6.EventEmitter;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 	const getLimit = requireGetLimit();
 
 	const StreamSearch = requireSbmh();
@@ -2152,7 +2152,7 @@ function requireDicer () {
 	hasRequiredDicer = 1;
 
 	const WritableStream = require$$0$7.Writable;
-	const inherits = require$$1$2.inherits;
+	const inherits = require$$1$1.inherits;
 
 	const StreamSearch = requireSbmh();
 
@@ -2729,7 +2729,7 @@ function requireMultipart () {
 	//     -- this will require modifications to utils.parseParams
 
 	const { Readable } = require$$0$7;
-	const { inherits } = require$$1$2;
+	const { inherits } = require$$1$1;
 
 	const Dicer = requireDicer();
 
@@ -3295,7 +3295,7 @@ function requireMain () {
 	hasRequiredMain = 1;
 
 	const WritableStream = require$$0$7.Writable;
-	const { inherits } = require$$1$2;
+	const { inherits } = require$$1$1;
 	const Dicer = requireDicer();
 
 	const MultipartParser = requireMultipart();
@@ -8119,7 +8119,7 @@ function requireConnect () {
 	    let socket;
 	    if (protocol === 'https:') {
 	      if (!tls) {
-	        tls = require$$1$1;
+	        tls = require$$1;
 	      }
 	      servername = servername || options.servername || util.getServerName(host) || null;
 
@@ -14129,7 +14129,7 @@ function requirePendingInterceptorsFormatter () {
 	hasRequiredPendingInterceptorsFormatter = 1;
 
 	const { Transform } = require$$0$5;
-	const { Console } = require$$1$3;
+	const { Console } = require$$1$2;
 
 	/**
 	 * Gets the output of `console.table(…)` as a string.
@@ -14356,7 +14356,7 @@ function requireProxyAgent () {
 	hasRequiredProxyAgent = 1;
 
 	const { kProxy, kClose, kDestroy, kInterceptors } = requireSymbols$4();
-	const { URL } = require$$1$4;
+	const { URL } = require$$1$3;
 	const Agent = requireAgent();
 	const Pool = requirePool();
 	const DispatcherBase = requireDispatcherBase();
@@ -25541,7 +25541,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$1__default);
+	const path = __importStar(path__default);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -25628,7 +25628,7 @@ function requireIoUtil () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
 		const fs = __importStar(fs__default);
-		const path = __importStar(require$$1__default);
+		const path = __importStar(path__default);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
@@ -25818,7 +25818,7 @@ function requireIo () {
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
 	const assert_1 = require$$0$3;
-	const path = __importStar(require$$1__default);
+	const path = __importStar(path__default);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -26126,7 +26126,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0);
 	const events = __importStar(require$$4$1);
 	const child = __importStar(require$$2$3);
-	const path = __importStar(require$$1__default);
+	const path = __importStar(path__default);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6$1;
@@ -26970,7 +26970,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$3();
 		const os = __importStar(require$$0);
-		const path = __importStar(require$$1__default);
+		const path = __importStar(path__default);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -42192,13 +42192,24 @@ function parse(src, reviver, options) {
 const MAX_GH_GQL_PAGINATION = 100;
 const GITHUB_WORKFLOWS_REGEX = /\.github\/workflows\/[^/]+\.ya?ml$/;
 function getFilesMatchingRegex(dir, regex) {
-    const sanitisedDir = dir.slice(-1) === '/' ? dir.slice(0, -1) : dir;
+    // Use path.join to sanitise, because it's what we use to generate the full
+    // path anyway. It will get rid of any initial './' if that's not the whole
+    // path on it's own. It will also ensure "one and only one" trailing '/'.
+    const sanitisedDir = path.join(path.join(dir), '/');
+    // Path's join can be used to sanitise anything other than the initial paths
+    // that represent "here", because it wont discard them from the result until
+    // there's more in the path after them, so handle the "here" separately. We
+    // want to regex the whole literal sanitised path, but using path.join later
+    // during iteration will remove the './' once it adds other paths, so we have
+    // to make sure we don't include the literal for './' if that IS the dir.
+    const rgx = sanitisedDir === './'
+        ? new RegExp(String.raw `^${regex.source}`)
+        : new RegExp(String.raw `^${sanitisedDir}${regex.source}`);
     const files = [];
     function readDirectory(directory) {
         const items = fs.readdirSync(directory);
-        const rgx = sanitisedDir === '.' ? new RegExp(String.raw `^${regex}`) : new RegExp(String.raw `^${sanitisedDir}/${regex}`);
         for (const item of items) {
-            const fullPath = require$$1.join(directory, item);
+            const fullPath = path.join(directory, item);
             const stat = fs.statSync(fullPath);
             if (stat.isDirectory()) {
                 readDirectory(fullPath);
@@ -42209,7 +42220,10 @@ function getFilesMatchingRegex(dir, regex) {
         }
     }
     readDirectory(dir);
-    return files;
+    return {
+        directory: sanitisedDir,
+        paths: files
+    };
 }
 
 async function run() {
@@ -42337,7 +42351,7 @@ async function run() {
                 // Get details of each workflow
                 console.log('All workflows LOCAL are ', workflowPathList.toString());
                 console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString());
-                const workflowsFound = workflowPathList.filter((x) => workflowsAPI.has(x));
+                const workflowsFound = workflowPathList.paths.filter((x) => workflowsAPI.has(x));
                 for (const workflowPath of workflowsFound) {
                     const workflowContent = fs.readFileSync(workflowPath, 'utf8');
                     const workflow = parse(workflowContent);
