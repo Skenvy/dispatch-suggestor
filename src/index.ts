@@ -176,17 +176,31 @@ async function run() {
         // paths that matches the workflow regex with the list of workflow paths
         // returned by the API. But we need to glue them back to the whole path
         // for finding and reading the yaml.
+        const dispatchableWorkflowsThatRequireInputs: string[] = []
         for (const workflowPath of workflowsFound) {
           const workflowContent = fs.readFileSync(path.join(workflowPathList.directory, workflowPath), 'utf8')
           const workflow = yaml.parse(workflowContent)
-          if (core.getInput('log-workflow-triggers') != 'false') {
-            if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
+          if ('on' in workflow && 'workflow_dispatch' in workflow.on) {
+            // Now we are only dealing with dispatchable workflows.
+            // Print some stuff about the thing we're parsing now.
+            if (core.getInput('log-workflow-triggers') != 'false') {
               console.log(`Workflow Path: ${workflowPath}`)
               if ('name' in workflow) {
                 console.log(`Workflow Name: ${workflow.name}`)
               }
               console.log(`On: ${JSON.stringify(workflow.on, null, 2)}`)
               // NEXT BRANCH: Implement the logic here to parse to `workflow.on`
+            }
+            // Check if the dispatch requires inputs, because this is something
+            // we can't magically know about. Perhaps a TODO if it ever matters
+            // would be to take a map provided to the action as an input that
+            // provides values for commonly named inputs, if you have a lot of
+            // dispatchables that share common input names and it's desirable
+            // for the dispatch link to populate the URL with some predetermined
+            // values per known input name. For now their run pages will be
+            // included in the comment with a message that they require input.
+            if ('inputs' in workflow.on.workflow_dispatch && workflow.on.workflow_dispatch.inputs != null) {
+              dispatchableWorkflowsThatRequireInputs.push(workflowPath)
             }
           }
         }
