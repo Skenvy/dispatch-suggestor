@@ -3,6 +3,8 @@ name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
 on:
   workflow_dispatch:
   push:
+    branches-ignore:
+    - '*'
     paths:
     - '.github/workflows/dispatch-push.yaml'
 permissions: {}
