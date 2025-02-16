@@ -10,10 +10,43 @@ import { minimatch } from 'minimatch'
 
 import * as utils from './utils.js'
 
-async function run() {
+/**
+ * A 1:1 of the inputs expected by the action.yml
+ */
+export type ActionInputs = {
+  github_token: string
+  trunk_branch: string
+  checkout_root: string
+  log_event_payload: string
+  log_workflow_triggers: string
+}
+
+/**
+ * Manages getting all the parameter inputs prior to running the action.
+ * @returns Promise<ActionInputs | null>
+ */
+export async function getActionInputs(): Promise<ActionInputs | null> {
+  try {
+    return {
+      trunk_branch: core.getInput('trunk-branch'),
+      checkout_root: core.getInput('checkout-root'),
+      log_event_payload: core.getInput('log-event-payload'),
+      log_workflow_triggers: core.getInput('log-workflow-triggers'),
+      github_token: core.getInput('github_token')
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error fetching inputs:', error.message)
+      core.setFailed(error.message)
+    }
+    return null
+  }
+}
+
+export async function run(actionInputs: ActionInputs) {
   try {
     // Get the JSON webhook payload for the event that triggered the workflow
-    if (core.getInput('log-event-payload') != 'false') {
+    if (actionInputs.log_event_payload != 'false') {
       console.log('The event payload:', JSON.stringify(github.context.payload, undefined, 2))
     }
 
@@ -31,7 +64,7 @@ async function run() {
     // Otherwise, procede as usual.
 
     // Prep the token and Rest API
-    const token = core.getInput('github_token')
+    const token = actionInputs.github_token
     const ghRestAPI = new Octokit({
       auth: `Bearer ${token}`
     })
@@ -144,8 +177,8 @@ async function run() {
     // is expecting the workflow that runs it to have run actions/checkout.
 
     const headBranch = utils.sanitiseString(context.payload.pull_request.head.ref) // use when templating the dispatch trigger URL
-    const trunkBranch = utils.sanitiseString(core.getInput('trunk-branch')) // check against the name of branch in push trigger conditions
-    const checkoutRoot = core.getInput('checkout-root')
+    const trunkBranch = utils.sanitiseString(actionInputs.trunk_branch) // check against the name of branch in push trigger conditions
+    const checkoutRoot = actionInputs.checkout_root
     if (!fs.existsSync(checkoutRoot)) {
       core.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`)
     }
@@ -307,7 +340,7 @@ async function run() {
             ////////////////////////////////////////////////////////////////////
             // Now we are only dealing with dispatchable workflows only.
             ////////////////////////////////////////////////////////////////////
-            if (core.getInput('log-workflow-triggers') != 'false') {
+            if (actionInputs.log_workflow_triggers != 'false') {
               console.log(`Workflow Path: ${workflowPath}`)
               if ('name' in workflow) {
                 console.log(`Workflow Name: ${workflow.name}`)
@@ -372,5 +405,3 @@ async function run() {
     if (error instanceof Error) core.setFailed(error.message)
   }
 }
-
-await run()

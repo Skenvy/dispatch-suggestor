@@ -12,10 +12,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const config = {
-  input: 'src/index.ts',
+  input: 'src/action.ts',
   output: {
     esModule: true,
-    file: 'dist/index.js',
+    file: 'dist/action.js',
     format: 'es',
     sourcemap: true
   },

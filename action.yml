@@ -31,4 +31,4 @@ outputs:
     description: 'A list of the workflows found in this repo that have workflow_dispatch triggers.'
 runs:
   using: 'node20'
-  main: 'dist/index.js'
+  main: 'dist/action.js'
