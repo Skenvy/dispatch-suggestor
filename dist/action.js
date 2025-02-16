@@ -44335,110 +44335,174 @@ async function getActionInputs() {
         return null;
     }
 }
-async function run(actionInputs) {
-    try {
-        // Get the JSON webhook payload for the event that triggered the workflow
-        if (actionInputs.log_event_payload != 'false') {
-            console.log('The event payload:', JSON.stringify(githubExports.context.payload, undefined, 2));
-        }
-        const context = githubExports.context;
-        const eventName = context.eventName;
-        // If this isn't running under a PR trigger, annotate and leave early
-        if (eventName !== 'pull_request' || !context.payload.pull_request) {
-            coreExports.setFailed(`dispatch-suggestor can only be run from a pull_request event, but it was triggered by a ${eventName} event.`);
-            return;
-        }
-        // Otherwise, procede as usual.
-        // Prep the token and Rest API
-        const token = actionInputs.github_token;
-        const ghRestAPI = new Octokit({
-            auth: `Bearer ${token}`
-        });
-        // Prep the owner, repo and PR#
-        async function getPRNumber() {
-            return context.payload.pull_request ? context.payload.pull_request.number : null;
-        }
-        const owner = context.repo.owner;
-        const repo = context.repo.repo;
-        const pullRequestNumber = await getPRNumber();
-        console.log('owner:', owner);
-        console.log('repo:', repo);
-        console.log('pullRequestNumber:', pullRequestNumber);
-        // STEP ONE: Get the list of files this PR touches
-        // At the moment this is done with the graphql endpoint. If for some reason
-        // that ends up being too frequently used, could add an option to use the
-        // rest api instead, but no point implementing both now.
-        // Query for acquiring the list of files changed by this PR + the graphql API ratelimit
-        const gql_query_list_PR_files = `
-      query($owner: String!, $name: String!, $pullRequestNumber: Int!, $maximumGitHubGraphQLPagination: Int!) {
-        repository(owner: $owner, name: $name) {
-          pullRequest(number: $pullRequestNumber) {
-            files(first: $maximumGitHubGraphQLPagination) {
-              edges {
-                node {
-                  path
-                  additions
-                  deletions
-                  changeType
-                }
-              }
+/**
+ * Logs the event payload if set to.
+ * @param actionInput
+ */
+function logEventPayload(actionInputs) {
+    // Print the JSON webhook payload for the event that triggered the workflow
+    if (actionInputs.log_event_payload != 'false') {
+        console.log('The event payload:', JSON.stringify(githubExports.context.payload, undefined, 2));
+    }
+}
+/**
+ * Sets the step status to failed if the event that triggered this wasn't a PR.
+ * @param eventName
+ * @param context
+ * @returns
+ */
+function thisIsntAPullRequestEvent(context) {
+    const thisIsntAPR = context.eventName !== 'pull_request' || !context.payload.pull_request;
+    if (thisIsntAPR) {
+        coreExports.setFailed(`dispatch-suggestor can only be run from a pull_request event. Was ${context.eventName} event.`);
+    }
+    return thisIsntAPR;
+}
+/**
+ * Query for the list of files changed by this PR + the graphql API ratelimit
+ */
+const gql_query_list_PR_files = `
+  query($owner: String!, $name: String!, $pullRequestNumber: Int!, $maximumGitHubGraphQLPagination: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $pullRequestNumber) {
+        files(first: $maximumGitHubGraphQLPagination) {
+          edges {
+            node {
+              path
+              additions
+              deletions
+              changeType
             }
           }
         }
-        rateLimit {
-          cost
-          remaining
-          resetAt
-        }
       }
-    `;
-        // Get the list of files changed by this PR.
-        async function fetchChangedFiles() {
-            let files = [];
-            try {
-                const result = await graphql2({
-                    query: gql_query_list_PR_files,
-                    owner,
-                    name: repo,
-                    pullRequestNumber,
-                    maximumGitHubGraphQLPagination: MAX_GH_GQL_PAGINATION,
-                    headers: {
-                        authorization: `Bearer ${token}`
-                    }
-                });
-                try {
-                    files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
-                    const rateLimitInfo = result.rateLimit;
-                    console.log('Changed files:', files);
-                    console.log('GraphQL Rate Limit Info:', rateLimitInfo);
-                    coreExports.notice(`Changed files: ${files.toString()}`);
-                    coreExports.notice(`GraphQL Rate Limit Info: ${JSON.stringify(rateLimitInfo)}`);
-                }
-                catch (error) {
-                    console.log('Full API Response:', JSON.stringify(result, null, 2));
-                    throw error; // throw error down to the next catch
-                }
+    }
+    rateLimit {
+      cost
+      remaining
+      resetAt
+    }
+  }
+`;
+/**
+ * Retrieve the repository owner from context
+ * @param context
+ * @returns
+ */
+function owner(context) {
+    return context.repo.owner;
+}
+/**
+ * Retrieve the repository name from context
+ * @param context
+ * @returns
+ */
+function repoName(context) {
+    return context.repo.repo;
+}
+/**
+ * Retrieve the pull request number from context
+ * @param context
+ * @returns
+ */
+function pullRequestNumber(context) {
+    // called only after `if (thisIsntAPullRequestEvent)`
+    return context.payload.pull_request.number;
+}
+/**
+ * Retrieve the HEAD ref from context.
+ *
+ * Used when templating the dispatch trigger URL.
+ * @param context
+ * @returns
+ */
+function headRef(context) {
+    // called only after `if (thisIsntAPullRequestEvent)`
+    return context.payload.pull_request.head.ref;
+}
+/**
+ * STEP ONE: Get the list of files this PR touches.
+ *
+ * At the moment this is done with the graphql endpoint. If for some reason that
+ * ends up being too frequently used, could add an option to use the rest api
+ * instead, but no point implementing both now.
+ * @param context
+ * @param actionInputs
+ * @returns A list of all files changed by this PR.
+ */
+async function fetchChangedFiles(context, actionInputs) {
+    let files = [];
+    try {
+        const result = await graphql2({
+            query: gql_query_list_PR_files,
+            owner: owner(context),
+            name: repoName(context),
+            pullRequestNumber: pullRequestNumber(context),
+            maximumGitHubGraphQLPagination: MAX_GH_GQL_PAGINATION,
+            headers: {
+                authorization: `Bearer ${actionInputs.github_token}`
             }
-            catch (error) {
-                console.error('Error fetching changed files:', error);
-                coreExports.setFailed(`Error fetching changed files: ${error}`);
-            }
-            return files;
+        });
+        try {
+            files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+            const rateLimitInfo = result.rateLimit;
+            console.log('Changed files:', files);
+            console.log('GraphQL Rate Limit Info:', rateLimitInfo);
+            coreExports.notice(`Changed files: ${files.toString()}`);
+            coreExports.notice(`GraphQL Rate Limit Info: ${JSON.stringify(rateLimitInfo)}`);
         }
-        const files = await fetchChangedFiles();
+        catch (error) {
+            console.log('Error, dumping full API Response:', JSON.stringify(result, null, 2));
+            throw error; // throw error down to the next catch
+        }
+    }
+    catch (error) {
+        console.error('Error fetching changed files:', error);
+        coreExports.setFailed(`Error fetching changed files: ${error}`);
+    }
+    return files;
+}
+async function run(actionInputs) {
+    try {
+        logEventPayload(actionInputs);
+        // Grab the context
+        const context = githubExports.context;
+        // If this isn't running under a PR trigger, annotate and leave early
+        if (thisIsntAPullRequestEvent(context))
+            return;
+        // Even though that func did this already, do it again for ts intellisense
+        if (!context.payload.pull_request)
+            return;
+        // Otherwise, procede as usual, for a pull_request trigger.
+        // Prep Rest API
+        const ghRestAPI = new Octokit({
+            auth: `Bearer ${actionInputs.github_token}`
+        });
+        // Prep the owner, repo and PR#
+        const owner = context.repo.owner;
+        const repo = context.repo.repo;
+        const pullRequestNumber = context.payload.pull_request.number;
+        console.log('owner:', owner);
+        console.log('repo:', repo);
+        console.log('pullRequestNumber:', pullRequestNumber);
+        // STEP ONE: Get the list of files changed by this PR.
+        const files = await fetchChangedFiles(context, actionInputs);
         coreExports.setOutput('list-of-changed-files', files);
+        // Prep the HEAD branch and the trunk branch for checking against the name
+        // of each branch in push trigger conditions
+        const headBranch = sanitiseString(headRef(context));
+        const trunkBranch = sanitiseString(actionInputs.trunk_branch);
+        // If the checkout root directory doesn't exist, set failure and exit.
+        if (!fs.existsSync(actionInputs.checkout_root)) {
+            coreExports.setFailed(`The specified path in checkout-root doesn't exist: ${actionInputs.checkout_root}`);
+            return;
+        }
         // STEP TWO: Get the set of triggering conditions for all trunk workflows.
         // The rest API for a github_token has a rate limit of 1000/hour/repo. Thats
         // not all that much when this is expected to be geared for a monorepo that
         // could have high double digit to triple digit workflows with frequent
         // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
         // is expecting the workflow that runs it to have run actions/checkout.
-        const headBranch = sanitiseString(context.payload.pull_request.head.ref); // use when templating the dispatch trigger URL
-        const trunkBranch = sanitiseString(actionInputs.trunk_branch); // check against the name of branch in push trigger conditions
-        const checkoutRoot = actionInputs.checkout_root;
-        if (!fs.existsSync(checkoutRoot)) {
-            coreExports.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`);
-        }
         /**
          * The logic for parsing the workflow.on.push.branches
          * @param workflow
@@ -44542,7 +44606,7 @@ async function run(actionInputs) {
         async function getWorkflows() {
             try {
                 // Get the list of files existing locally, and hit the API.
-                const workflowPathList = getFilesMatchingGithubWorkflows(checkoutRoot);
+                const workflowPathList = getFilesMatchingGithubWorkflows(actionInputs.checkout_root);
                 const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
                     owner: owner,
                     repo: repo
