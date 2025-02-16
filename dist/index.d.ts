@@ -13,4 +13,9 @@ export type ActionInputs = {
  * @returns Promise<ActionInputs | null>
  */
 export declare function getActionInputs(): Promise<ActionInputs | null>;
-export declare function run(actionInputs: ActionInputs): Promise<void>;
+/**
+ * The function run by the action.
+ * @param actionInputs
+ * @returns
+ */
+export declare function entrypoint(actionInputs: ActionInputs): Promise<void>;
