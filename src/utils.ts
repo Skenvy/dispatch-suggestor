@@ -5,6 +5,14 @@ export const MAX_GH_GQL_PAGINATION = 100
 export const GITHUB_WORKFLOWS_REGEX = /\.github\/workflows\/[^/]+\.ya?ml$/
 
 /**
+ * Sanitise a single line string
+ * @param str
+ */
+export function sanitiseString(str: string): string {
+  return str.replace(/\n|\r/g, '')
+}
+
+/**
  * Returns the directory of a root folder searched within for matches to the
  * regex, and a list of all files under that root folder that matched it.
  * @param dir

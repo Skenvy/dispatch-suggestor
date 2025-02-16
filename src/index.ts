@@ -143,8 +143,8 @@ async function run() {
     // pushes. AS SUCH -- this parses checked out files '''locally''' i.e. this
     // is expecting the workflow that runs it to have run actions/checkout.
 
-    const headBranch = context.payload.pull_request.head.ref // use when templating the dispatch trigger URL
-    const trunkBranch = core.getInput('trunk-branch') // check against the name of branch in push trigger conditions
+    const headBranch = utils.sanitiseString(context.payload.pull_request.head.ref) // use when templating the dispatch trigger URL
+    const trunkBranch = utils.sanitiseString(core.getInput('trunk-branch')) // check against the name of branch in push trigger conditions
     const checkoutRoot = core.getInput('checkout-root')
     if (!fs.existsSync(checkoutRoot)) {
       core.setFailed(`The specified path in checkout-root doesn't exist: ${checkoutRoot}`)
