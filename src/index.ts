@@ -395,18 +395,27 @@ function thisPushWouldTriggerOnAPushToRef(
   }
 }
 
-function changedFilesMatchThisPushPaths(
+function changedFilesAntiMatchThisPushPathsIgnore(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   workflow: any,
-  workflowPath: string,
-  context: Context,
-  actionInputs: ActionInputs,
   listOfChangedFiles: string[]
 ): boolean {
-  return false
+  // If paths-ignore is present, no need to check for negation.
+  // If any file in the list of changed files is not ignored by one of the
+  // ignore globs, then true
+  return listOfChangedFiles
+    .map((changedFile: string) =>
+      // each changed file maps to the rolled up result of testing it against all
+      // ignore globs, testing for a true match against any of them.
+      workflow.on.push['paths-ignore']
+        .map((pathIgnoreGlob: string) => minimatch(changedFile, pathIgnoreGlob))
+        .includes(true)
+    )
+    .includes(false)
+  // and finally makes sure that at least one of the changed files DIDN'T match
 }
 
-function changedFilesMatchThisPushPathsIgnore(
+function changedFilesMatchThisPushPaths(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   workflow: any,
   workflowPath: string,
@@ -438,11 +447,11 @@ function theChangedFilesMatchThisPushesPathFilters(
 ): boolean {
   // 'paths-ignore' and 'paths' are mutually exclusive.
   if ('paths-ignore' in workflow.on.push && workflow.on.push['paths-ignore'] != null) {
-    const res = changedFilesMatchThisPushPaths(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
+    const res = changedFilesAntiMatchThisPushPathsIgnore(workflow, listOfChangedFiles)
     console.log(`${DWTBP_PREFIX} specifies paths-ignore filters: Result was ${res} for: ${workflowPath}`)
     return res
   } else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
-    const res = changedFilesMatchThisPushPathsIgnore(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
+    const res = changedFilesMatchThisPushPaths(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
     console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`)
     return res
   } else {
