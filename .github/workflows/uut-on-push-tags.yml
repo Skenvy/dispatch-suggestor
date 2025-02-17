@@ -6,7 +6,7 @@ on:
     tags:
     - 'fake_tag'
     paths:
-    - '_test/a/*'
+    - '_test/a/**'
 permissions: {}
 defaults:
   run:

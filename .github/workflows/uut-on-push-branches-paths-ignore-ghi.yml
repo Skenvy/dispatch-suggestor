@@ -6,7 +6,7 @@ on:
     branches:
     - 'fake_trunk'
     paths-ignore:
-    - '_test/ghi/*'
+    - '_test/ghi/**'
 permissions: {}
 defaults:
   run:

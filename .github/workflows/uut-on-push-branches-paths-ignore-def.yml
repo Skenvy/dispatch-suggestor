@@ -6,7 +6,7 @@ on:
     branches:
     - 'fake_trunk'
     paths-ignore:
-    - '_test/def/*'
+    - '_test/def/**'
 permissions: {}
 defaults:
   run:

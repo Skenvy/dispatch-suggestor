@@ -99,6 +99,7 @@ jobs:
         log-event-payload: ${{ matrix.log-event-payload }}
         log-workflow-triggers: ${{ matrix.log-workflow-triggers }}
         inject-diff-paths: ${{ matrix.inject-diff-paths }}
+        vvv: true
     - name: Eval -- List changed files
       run: echo "${{ steps.test-default.outputs.list-of-changed-files }}"
     - name: Eval -- List dispatchable workflows
