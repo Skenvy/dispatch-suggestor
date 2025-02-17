@@ -445,11 +445,14 @@ function changedFilesFilteredThisPushPaths(
     positiveCheck = _pathGlob.slice(0, 1) != '!'
     pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1)
     for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+      console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`)
+      console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`)
       // If this changed file name matches the path glob then we update its
       // value to whatever the positive check is, otherwise leave same.
       changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
         ? positiveCheck
         : changedFilesPassedFilter[i]
+      console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`)
     }
   }
   return changedFilesPassedFilter.includes(true)

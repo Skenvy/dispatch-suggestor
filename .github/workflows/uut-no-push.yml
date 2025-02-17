@@ -1,0 +1,17 @@
+# Presence of this file used in development testing
+name: UUT::NO_PUSH
+on:
+  workflow_dispatch:
+permissions: {}
+defaults:
+  run:
+    shell: bash
+jobs:
+  echo-payload:
+    name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
