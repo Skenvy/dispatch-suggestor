@@ -578,7 +578,7 @@ async function getDispatchableWorkflows(
     // for finding and reading the yaml.
     const dispatchableWorkflowsThatRequireInputs: string[] = []
     const dispatchableWorkflowsTriggeredByPush: string[] = []
-    const dispatchableWorkflowsTriggeredByPushThatDontRequireInputs = []
+    const dispatchableWorkflowsTriggeredByPushThatDontRequireInputs: string[] = []
     // Iterate over the list of workflows and parse the workflow_dispatch ones.
     for (const workflowPath of workflowsFound) {
       const workflowContent = fs.readFileSync(path.join(localWorkflowPaths.directory, workflowPath), 'utf8')
@@ -629,19 +629,19 @@ async function getDispatchableWorkflows(
         } else {
           console.log(`Dispatchable workflow not triggered by push: ${workflowPath}`)
         }
-        for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-          if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
-            console.log(
-              `Dispatchable workflow triggered by push but not included because it requires inputs: ${workflowPath}`
-            )
-          } else {
-            if (actionInputs.vvv) console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`)
-            dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp)
-          }
-        }
         ////////////////////////////////////////////////////////////////////
         // We're now finished parsing dispatchable workflows.
         ////////////////////////////////////////////////////////////////////
+      }
+    }
+    // Finally, complete the list to return by checking against workflows with
+    // required inputs that we need to disclude.
+    for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
+      if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
+        console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`)
+      } else {
+        if (actionInputs.vvv) console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`)
+        dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp)
       }
     }
     return dispatchableWorkflowsTriggeredByPushThatDontRequireInputs
