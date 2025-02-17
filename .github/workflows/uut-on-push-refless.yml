@@ -1,0 +1,22 @@
+# Presence of this file used in development testing
+name: UUT::on.push::Refless
+# This should be not included in any output at the
+# moment because it does not specify a branch or tag
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - '_test/a/*'
+permissions: {}
+defaults:
+  run:
+    shell: bash
+jobs:
+  echo-payload:
+    name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"

@@ -25,9 +25,9 @@
   "files": [
     "./dist/**/*"
   ],
-  "main": "./dist/index.js",
+  "main": "./dist/action.js",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/action.js"
   },
   "engines": {
     "node": ">=20"
@@ -55,6 +55,7 @@
     "@actions/github": "^6.0.0",
     "@octokit/graphql": "^8.2.0",
     "@octokit/rest": "^21.1.0",
+    "@octokit/types": "^13.8.0",
     "minimatch": "^10.0.1",
     "yaml": "^2.7.0"
   },

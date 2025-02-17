@@ -24,6 +24,10 @@ inputs:
     description: 'If not false, will print the triggers for all dispatchable workflows.'
     required: false
     default: 'false'
+  inject-diff-paths:
+    description: 'A comma-separated list of paths to inject in to the list of changed files'
+    required: false
+    default: ''
 outputs:
   list-of-changed-files:
     description: 'A list of the files that have been touched by this PR'
@@ -31,4 +35,4 @@ outputs:
     description: 'A list of the workflows found in this repo that have workflow_dispatch triggers.'
 runs:
   using: 'node20'
-  main: 'dist/index.js'
+  main: 'dist/action.js'
