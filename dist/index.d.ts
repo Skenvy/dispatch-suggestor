@@ -5,9 +5,10 @@ export type ActionInputs = {
     github_token: string;
     trunk_branch: string;
     checkout_root: string;
-    log_event_payload: string;
-    log_workflow_triggers: string;
+    log_event_payload: boolean;
+    log_workflow_triggers: boolean;
     inject_diff_paths: string;
+    vvv: boolean;
 };
 /**
  * Manages getting all the parameter inputs prior to running the action.

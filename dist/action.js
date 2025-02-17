@@ -44322,9 +44322,10 @@ async function getActionInputs() {
         return {
             trunk_branch: coreExports.getInput('trunk-branch'),
             checkout_root: coreExports.getInput('checkout-root'),
-            log_event_payload: coreExports.getInput('log-event-payload'),
-            log_workflow_triggers: coreExports.getInput('log-workflow-triggers'),
+            log_event_payload: coreExports.getInput('log-event-payload') !== 'false',
+            log_workflow_triggers: coreExports.getInput('log-workflow-triggers') !== 'false',
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
+            vvv: coreExports.getInput('vvv') !== 'false',
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -44342,7 +44343,7 @@ async function getActionInputs() {
  */
 function logEventPayload(actionInputs) {
     // Print the JSON webhook payload for the event that triggered the workflow
-    if (actionInputs.log_event_payload != 'false') {
+    if (actionInputs.log_event_payload) {
         console.log('The event payload:', JSON.stringify(githubExports.context.payload, undefined, 2));
     }
 }
@@ -44649,12 +44650,13 @@ workflow, listOfChangedFiles) {
 /**
  * True if any of the changed paths filter through all the filtering globs.
  * @param workflow
+ * @param actionInputs
  * @param listOfChangedFiles
  * @returns
  */
 function changedFilesFilteredThisPushPaths(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, listOfChangedFiles) {
+workflow, actionInputs, listOfChangedFiles) {
     // Only paths is supposed to be used with the negating case.
     const changedFilesPassedFilter = [];
     for (let i = 0; i < listOfChangedFiles.length; i += 1) {
@@ -44667,14 +44669,19 @@ workflow, listOfChangedFiles) {
         positiveCheck = _pathGlob.slice(0, 1) != '!';
         pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1);
         for (let i = 0; i < listOfChangedFiles.length; i += 1) {
-            console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`);
-            console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- does glob match? ${minimatch(listOfChangedFiles[i], pathGlob)}`);
             // If this changed file name matches the path glob then we update its
             // value to whatever the positive check is, otherwise leave same.
             changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
                 ? positiveCheck
                 : changedFilesPassedFilter[i];
-            console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`);
         }
     }
     return changedFilesPassedFilter.includes(true);
@@ -44701,7 +44708,7 @@ workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
         return res;
     }
     else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
-        const res = changedFilesFilteredThisPushPaths(workflow, listOfChangedFiles);
+        const res = changedFilesFilteredThisPushPaths(workflow, actionInputs, listOfChangedFiles);
         console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`);
         return res;
     }
@@ -44777,7 +44784,7 @@ workflowsListedByAPI, listOfChangedFiles) {
                 ////////////////////////////////////////////////////////////////////
                 // Now we are only dealing with dispatchable workflows only.
                 ////////////////////////////////////////////////////////////////////
-                if (actionInputs.log_workflow_triggers != 'false') {
+                if (actionInputs.log_workflow_triggers) {
                     console.log(`Workflow Path: ${workflowPath}`);
                     if ('name' in workflow) {
                         console.log(`Workflow Name: ${workflow.name}`);
