@@ -44818,19 +44818,21 @@ workflowsListedByAPI, listOfChangedFiles) {
                 else {
                     console.log(`Dispatchable workflow not triggered by push: ${workflowPath}`);
                 }
-                for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-                    if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
-                        console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${workflowPath}`);
-                    }
-                    else {
-                        if (actionInputs.vvv)
-                            console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`);
-                        dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
-                    }
-                }
                 ////////////////////////////////////////////////////////////////////
                 // We're now finished parsing dispatchable workflows.
                 ////////////////////////////////////////////////////////////////////
+            }
+        }
+        // Finally, complete the list to return by checking against workflows with
+        // required inputs that we need to disclude.
+        for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
+            if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
+                console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`);
+            }
+            else {
+                if (actionInputs.vvv)
+                    console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`);
+                dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
             }
         }
         return dispatchableWorkflowsTriggeredByPushThatDontRequireInputs;
