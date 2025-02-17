@@ -44600,6 +44600,7 @@ function thisPushDoesntIncludeABranchOrTagFilter(workflowPath) {
  * @param actionInputs
  * @returns
  */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
 // Any required from output of yaml.parse
 // Runs in a context after already establishing workflow.on.push is non null.
 function thisPushWouldTriggerOnAPushToRef(
@@ -44684,6 +44685,7 @@ workflow, listOfChangedFiles) {
  * @param listOfChangedFiles
  * @returns
  */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
 // Any required from output of yaml.parse
 // Runs in a context after already establishing workflow.on.push is non null.
 function theChangedFilesMatchThisPushesPathFilters(
