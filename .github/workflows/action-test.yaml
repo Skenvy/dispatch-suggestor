@@ -75,6 +75,21 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/xyz/some/fake/file/path'
           expected-dispatchable-workflows: 'uut-on-push-branches-paths-xyz.yml'
+        # Test the ignore paths options
+        - job-name: PATHS IGNORE DEF
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/def/some/fake/file/path'
+          expected-dispatchable-workflows: 'uut-on-push-branches-paths-xyz.yml'
+        - job-name: PATHS IGNORE GHI
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/ghi/some/fake/file/path'
+          expected-dispatchable-workflows: 'uut-on-push-branches-paths-xyz.yml'
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
