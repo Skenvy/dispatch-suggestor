@@ -7,6 +7,7 @@ export type ActionInputs = {
     checkout_root: string;
     log_event_payload: string;
     log_workflow_triggers: string;
+    inject_diff_paths: string;
 };
 /**
  * Manages getting all the parameter inputs prior to running the action.

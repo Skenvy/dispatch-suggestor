@@ -395,7 +395,13 @@ function thisPushWouldTriggerOnAPushToRef(
   }
 }
 
-function changedFilesAntiMatchThisPushPathsIgnore(
+/**
+ * True if any of the changed paths are not ignored by the paths-ignore filter.
+ * @param workflow
+ * @param listOfChangedFiles
+ * @returns
+ */
+function changedFilesFilteredThisPushPathsIgnore(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   workflow: any,
   listOfChangedFiles: string[]
@@ -415,15 +421,37 @@ function changedFilesAntiMatchThisPushPathsIgnore(
   // and finally makes sure that at least one of the changed files DIDN'T match
 }
 
-function changedFilesMatchThisPushPaths(
+/**
+ * True if any of the changed paths filter through all the filtering globs.
+ * @param workflow
+ * @param listOfChangedFiles
+ * @returns
+ */
+function changedFilesFilteredThisPushPaths(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   workflow: any,
-  workflowPath: string,
-  context: Context,
-  actionInputs: ActionInputs,
   listOfChangedFiles: string[]
 ): boolean {
-  return false
+  // Only paths is supposed to be used with the negating case.
+  const changedFilesPassedFilter: boolean[] = []
+  for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+    changedFilesPassedFilter.push(false)
+  }
+  let positiveCheck: boolean
+  let pathGlob: string
+  for (const _pathGlob of workflow.on.push['paths']) {
+    // First check for inverse condition / sanitise path
+    positiveCheck = _pathGlob.slice(0, 1) != '!'
+    pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1)
+    for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+      // If this changed file name matches the path glob then we update its
+      // value to whatever the positive check is, otherwise leave same.
+      changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
+        ? positiveCheck
+        : changedFilesPassedFilter[i]
+    }
+  }
+  return changedFilesPassedFilter.includes(true)
 }
 
 /**
@@ -447,11 +475,11 @@ function theChangedFilesMatchThisPushesPathFilters(
 ): boolean {
   // 'paths-ignore' and 'paths' are mutually exclusive.
   if ('paths-ignore' in workflow.on.push && workflow.on.push['paths-ignore'] != null) {
-    const res = changedFilesAntiMatchThisPushPathsIgnore(workflow, listOfChangedFiles)
+    const res = changedFilesFilteredThisPushPathsIgnore(workflow, listOfChangedFiles)
     console.log(`${DWTBP_PREFIX} specifies paths-ignore filters: Result was ${res} for: ${workflowPath}`)
     return res
   } else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
-    const res = changedFilesMatchThisPushPaths(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
+    const res = changedFilesFilteredThisPushPaths(workflow, listOfChangedFiles)
     console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`)
     return res
   } else {

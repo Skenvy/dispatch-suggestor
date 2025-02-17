@@ -10,7 +10,7 @@ permissions:
   pull-requests: read
 jobs:
   test:
-    name: Test the Action
+    name: TEST -- ${{ matrix.job-name }}
     runs-on: 'ubuntu-latest'
     # What are we testing for here? Well the repo about is...
     #
@@ -29,33 +29,52 @@ jobs:
         include:
         # Initially, three test cases to verify the checkout-root behaves ok.
         # (default path, log everything)
-        - trunk-branch: fake_trunk
+        - job-name: DEFAULTISH
+          trunk-branch: fake_trunk
           checkout-root: '.' # default
           log-event-payload: true
           log-workflow-triggers: true
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: 'uut-on-push-branches.yml'
         # (non-default checkout-root internal)
-        - trunk-branch: fake_trunk
+        - job-name: INTERNAL CHECKOUT ROOT
+          trunk-branch: fake_trunk
           checkout-root: 'test/integration/example'
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: 'uut-on-push-branches.yml'
         # (non-default checkout-root external)
-        - trunk-branch: fake_trunk
+        - job-name: EXTERNAL CHECKOUT ROOT
+          trunk-branch: fake_trunk
           checkout-root: '../dispatch-suggestor/test/integration/example'
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: 'uut-on-push-branches.yml'
         # (default checkout root, but a different trunk name)
-        - trunk-branch: some_other_fake_trunk_name
+        - job-name: BRANCHES IGNORE
+          trunk-branch: some_other_fake_trunk_name
           checkout-root: '.'
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: 'uut-on-push-branches-ignore.yml'
+        # Now test the paths summon their respective workflows independently
+        - job-name: PATHS ABC
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/abc/some/fake/file/path'
+          expected-dispatchable-workflows: 'uut-on-push-branches-paths-abc.yml'
+        - job-name: PATHS XYZ
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/xyz/some/fake/file/path'
+          expected-dispatchable-workflows: 'uut-on-push-branches-paths-xyz.yml'
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
