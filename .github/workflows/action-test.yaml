@@ -28,6 +28,7 @@ jobs:
       matrix:
         include:
         # Initially, three test cases to verify the checkout-root behaves ok.
+        # These all only inject '_test/a/*' so should only be triggering one wf.
         # (default path, log everything)
         - job-name: DEFAULTISH
           trunk-branch: fake_trunk
@@ -35,7 +36,8 @@ jobs:
           log-event-payload: true
           log-workflow-triggers: true
           inject-diff-paths: '_test/a/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches.yml]'
+          vvv: false
         # (non-default checkout-root internal)
         - job-name: INTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -43,7 +45,8 @@ jobs:
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches.yml]'
+          vvv: false
         # (non-default checkout-root external)
         - job-name: EXTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -51,15 +54,17 @@ jobs:
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches.yml]'
+          vvv: false
         # (default checkout root, but a different trunk name)
         - job-name: BRANCHES IGNORE
-          trunk-branch: some_other_fake_trunk_name
+          trunk-branch: _some_other_fake_trunk_name
           checkout-root: '.'
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches-ignore.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches-ignore.yml]'
+          vvv: false
         # Now test the paths summon their respective workflows independently
         - job-name: PATHS ABC
           trunk-branch: fake_trunk
@@ -67,14 +72,33 @@ jobs:
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/abc/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches-paths-abc.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches-paths-abc.yml]'
+          vvv: false
         - job-name: PATHS XYZ
           trunk-branch: fake_trunk
           checkout-root: '.'
           log-event-payload: false
           log-workflow-triggers: false
           inject-diff-paths: '_test/xyz/some/fake/file/path'
-          expected-dispatchable-workflows: 'uut-on-push-branches-paths-xyz.yml'
+          expected-dispatchable-workflows: '[.github/workflows/uut-on-push-branches-paths-xyz.yml]'
+          vvv: false
+        # Test the ignore paths options (empty expects until the wf's they test are in main)
+        - job-name: PATHS IGNORE DEF
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/def/some/fake/file/path'
+          expected-dispatchable-workflows: '[]'
+          vvv: false
+        - job-name: PATHS IGNORE GHI
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          inject-diff-paths: '_test/ghi/some/fake/file/path'
+          expected-dispatchable-workflows: '[]'
+          vvv: false
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -99,7 +123,14 @@ jobs:
         log-event-payload: ${{ matrix.log-event-payload }}
         log-workflow-triggers: ${{ matrix.log-workflow-triggers }}
         inject-diff-paths: ${{ matrix.inject-diff-paths }}
-    - name: Eval -- List changed files
+        vvv: ${{ matrix.vvv }}
+    - name: Log -- List changed files
       run: echo "${{ steps.test-default.outputs.list-of-changed-files }}"
-    - name: Eval -- List dispatchable workflows
+    - name: Log -- List dispatchable workflows
       run: echo "${{ steps.test-default.outputs.list-of-dispatchable-workflows }}"
+    - name: Eval -- dispatchable workflows are what were expected?
+      run: >-
+        [[ "${{ steps.test-default.outputs.list-of-dispatchable-workflows }}"
+        == "${{ matrix.expected-dispatchable-workflows }}" ]]
+        && echo "Dispatchable workflows match expected"
+        || (echo "Dispatchable workflows mismatch" && exit 1)

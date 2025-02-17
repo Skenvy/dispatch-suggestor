@@ -27630,7 +27630,7 @@ function requireBeforeAfterHook () {
 
 var beforeAfterHookExports = requireBeforeAfterHook();
 
-const VERSION$f = "9.0.5";
+const VERSION$f = "9.0.6";
 
 const userAgent$2 = `octokit-endpoint.js/${VERSION$f} ${getUserAgent$2()}`;
 const DEFAULTS$2 = {
@@ -27727,9 +27727,9 @@ function addQueryParameters$2(url, parameters) {
   }).join("&");
 }
 
-const urlVariableRegex$2 = /\{[^}]+\}/g;
+const urlVariableRegex$2 = /\{[^{}}]+\}/g;
 function removeNonChars$2(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames$2(url) {
   const matches = url.match(urlVariableRegex$2);
@@ -27912,7 +27912,7 @@ function parse$3(options) {
     }
     if (url.endsWith("/graphql")) {
       if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
           const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
           return `application/vnd.github.${preview}-preview${format}`;
@@ -27961,7 +27961,7 @@ function withDefaults$7(oldDefaults, newDefaults) {
 
 const endpoint$2 = withDefaults$7(null, DEFAULTS$2);
 
-const VERSION$e = "8.4.0";
+const VERSION$e = "8.4.1";
 
 function isPlainObject$4(value) {
   if (typeof value !== "object" || value === null)
@@ -28109,7 +28109,7 @@ let RequestError$2 = class RequestError extends Error {
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(
-          / .*$/,
+          /(?<! ) .*$/,
           " [REDACTED]"
         )
       });
@@ -28177,7 +28177,7 @@ function fetchWrapper$2(requestOptions) {
       headers[keyAndValue[0]] = keyAndValue[1];
     }
     if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const matches = headers.link && headers.link.match(/<([^<>]+)>; rel="deprecation"/);
       const deprecationLink = matches && matches.pop();
       log.warn(
         `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
@@ -30746,7 +30746,7 @@ var distSrc = /*#__PURE__*/Object.freeze({
 var require$$3 = /*@__PURE__*/getAugmentedNamespace(distSrc);
 
 // pkg/dist-src/version.js
-var VERSION$a = "9.2.1";
+var VERSION$a = "9.2.2";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse$1(response) {
@@ -30794,7 +30794,7 @@ function iterator$1(octokit, route, parameters) {
           const response = await requestMethod({ method, url, headers });
           const normalizedResponse = normalizePaginatedListResponse$1(response);
           url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
+            /<([^<>]+)>;\s*rel="next"/
           ) || [])[1];
           return { value: normalizedResponse };
         } catch (error) {
@@ -31353,9 +31353,9 @@ function addQueryParameters$1(url, parameters) {
 }
 
 // pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$1 = /\{[^}]+\}/g;
+var urlVariableRegex$1 = /\{[^{}}]+\}/g;
 function removeNonChars$1(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames$1(url) {
   const matches = url.match(urlVariableRegex$1);
@@ -31541,7 +31541,7 @@ function parse$2(options) {
     }
     if (url.endsWith("/graphql")) {
       if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
           const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
           return `application/vnd.github.${preview}-preview${format}`;
@@ -31801,7 +31801,7 @@ let RequestError$1 = class RequestError extends Error {
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(
-          / .*$/,
+          /(?<! ) .*$/,
           " [REDACTED]"
         )
       });
@@ -31895,7 +31895,7 @@ async function fetchWrapper$1(requestOptions) {
     data: ""
   };
   if ("deprecation" in responseHeaders) {
-    const matches = responseHeaders.link && responseHeaders.link.match(/<([^>]+)>; rel="deprecation"/);
+    const matches = responseHeaders.link && responseHeaders.link.match(/<([^<>]+)>; rel="deprecation"/);
     const deprecationLink = matches && matches.pop();
     log.warn(
       `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
@@ -32357,9 +32357,9 @@ function addQueryParameters(url, parameters) {
 }
 
 // pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex = /\{[^}]+\}/g;
+var urlVariableRegex = /\{[^{}}]+\}/g;
 function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames(url) {
   const matches = url.match(urlVariableRegex);
@@ -32545,7 +32545,7 @@ function parse$1(options) {
     }
     if (url.endsWith("/graphql")) {
       if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
           const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
           return `application/vnd.github.${preview}-preview${format}`;
@@ -32625,7 +32625,7 @@ class RequestError extends Error {
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(
-          / .*$/,
+          /(?<! ) .*$/,
           " [REDACTED]"
         )
       });
@@ -32719,7 +32719,7 @@ async function fetchWrapper(requestOptions) {
     data: ""
   };
   if ("deprecation" in responseHeaders) {
-    const matches = responseHeaders.link && responseHeaders.link.match(/<([^>]+)>; rel="deprecation"/);
+    const matches = responseHeaders.link && responseHeaders.link.match(/<([^<>]+)>; rel="deprecation"/);
     const deprecationLink = matches && matches.pop();
     log.warn(
       `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
@@ -32872,7 +32872,7 @@ var createTokenAuth = function createTokenAuth2(token) {
   });
 };
 
-const VERSION$4 = "6.1.3";
+const VERSION$4 = "6.1.4";
 
 const noop = () => {
 };
@@ -33072,7 +33072,7 @@ function iterator(octokit, route, parameters) {
           const response = await requestMethod({ method, url, headers });
           const normalizedResponse = normalizePaginatedListResponse(response);
           url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
+            /<([^<>]+)>;\s*rel="next"/
           ) || [])[1];
           return { value: normalizedResponse };
         } catch (error) {
@@ -35338,7 +35338,7 @@ function legacyRestEndpointMethods(octokit) {
 }
 legacyRestEndpointMethods.VERSION = VERSION$1;
 
-const VERSION = "21.1.0";
+const VERSION = "21.1.1";
 
 const Octokit = Octokit$1.plugin(requestLog, legacyRestEndpointMethods, paginateRest).defaults(
   {
@@ -44322,9 +44322,10 @@ async function getActionInputs() {
         return {
             trunk_branch: coreExports.getInput('trunk-branch'),
             checkout_root: coreExports.getInput('checkout-root'),
-            log_event_payload: coreExports.getInput('log-event-payload'),
-            log_workflow_triggers: coreExports.getInput('log-workflow-triggers'),
+            log_event_payload: coreExports.getInput('log-event-payload') !== 'false',
+            log_workflow_triggers: coreExports.getInput('log-workflow-triggers') !== 'false',
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
+            vvv: coreExports.getInput('vvv') !== 'false',
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -44342,7 +44343,7 @@ async function getActionInputs() {
  */
 function logEventPayload(actionInputs) {
     // Print the JSON webhook payload for the event that triggered the workflow
-    if (actionInputs.log_event_payload != 'false') {
+    if (actionInputs.log_event_payload) {
         console.log('The event payload:', JSON.stringify(githubExports.context.payload, undefined, 2));
     }
 }
@@ -44600,6 +44601,7 @@ function thisPushDoesntIncludeABranchOrTagFilter(workflowPath) {
  * @param actionInputs
  * @returns
  */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
 // Any required from output of yaml.parse
 // Runs in a context after already establishing workflow.on.push is non null.
 function thisPushWouldTriggerOnAPushToRef(
@@ -44648,12 +44650,13 @@ workflow, listOfChangedFiles) {
 /**
  * True if any of the changed paths filter through all the filtering globs.
  * @param workflow
+ * @param actionInputs
  * @param listOfChangedFiles
  * @returns
  */
 function changedFilesFilteredThisPushPaths(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, listOfChangedFiles) {
+workflow, actionInputs, listOfChangedFiles) {
     // Only paths is supposed to be used with the negating case.
     const changedFilesPassedFilter = [];
     for (let i = 0; i < listOfChangedFiles.length; i += 1) {
@@ -44666,11 +44669,19 @@ workflow, listOfChangedFiles) {
         positiveCheck = _pathGlob.slice(0, 1) != '!';
         pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1);
         for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+            if (actionInputs.vvv)
+                console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- does glob match? ${minimatch(listOfChangedFiles[i], pathGlob)}`);
             // If this changed file name matches the path glob then we update its
             // value to whatever the positive check is, otherwise leave same.
             changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
                 ? positiveCheck
                 : changedFilesPassedFilter[i];
+            if (actionInputs.vvv)
+                console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`);
         }
     }
     return changedFilesPassedFilter.includes(true);
@@ -44684,6 +44695,7 @@ workflow, listOfChangedFiles) {
  * @param listOfChangedFiles
  * @returns
  */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
 // Any required from output of yaml.parse
 // Runs in a context after already establishing workflow.on.push is non null.
 function theChangedFilesMatchThisPushesPathFilters(
@@ -44696,7 +44708,7 @@ workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
         return res;
     }
     else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
-        const res = changedFilesFilteredThisPushPaths(workflow, listOfChangedFiles);
+        const res = changedFilesFilteredThisPushPaths(workflow, actionInputs, listOfChangedFiles);
         console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`);
         return res;
     }
@@ -44772,7 +44784,7 @@ workflowsListedByAPI, listOfChangedFiles) {
                 ////////////////////////////////////////////////////////////////////
                 // Now we are only dealing with dispatchable workflows only.
                 ////////////////////////////////////////////////////////////////////
-                if (actionInputs.log_workflow_triggers != 'false') {
+                if (actionInputs.log_workflow_triggers) {
                     console.log(`Workflow Path: ${workflowPath}`);
                     if ('name' in workflow) {
                         console.log(`Workflow Name: ${workflow.name}`);
@@ -44798,23 +44810,29 @@ workflowsListedByAPI, listOfChangedFiles) {
                 // Check and gather all dispatchables that are triggered on push
                 if ('push' in workflow.on) {
                     if (thisWorkflowPassesTheChecksToAddItToTheComment(workflow, workflowPath, context, actionInputs, listOfChangedFiles)) {
+                        if (actionInputs.vvv)
+                            console.log(`--debug-- pushing wf to trigger-by-push-pre-list ${workflowPath}`);
                         dispatchableWorkflowsTriggeredByPush.push(workflowPath);
                     }
                 }
                 else {
                     console.log(`Dispatchable workflow not triggered by push: ${workflowPath}`);
                 }
-                for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-                    if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
-                        console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${workflowPath}`);
-                    }
-                    else {
-                        dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
-                    }
-                }
                 ////////////////////////////////////////////////////////////////////
                 // We're now finished parsing dispatchable workflows.
                 ////////////////////////////////////////////////////////////////////
+            }
+        }
+        // Finally, complete the list to return by checking against workflows with
+        // required inputs that we need to disclude.
+        for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
+            if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
+                console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`);
+            }
+            else {
+                if (actionInputs.vvv)
+                    console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`);
+                dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
             }
         }
         return dispatchableWorkflowsTriggeredByPushThatDontRequireInputs;

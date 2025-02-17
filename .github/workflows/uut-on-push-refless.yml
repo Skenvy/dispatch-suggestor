@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-    - '_test/a/*'
+    - '_test/a/**'
 permissions: {}
 defaults:
   run:

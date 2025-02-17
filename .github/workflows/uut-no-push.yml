@@ -1,12 +1,7 @@
 # Presence of this file used in development testing
-name: UUT::on.push::paths::abc
+name: UUT::NO_PUSH
 on:
   workflow_dispatch:
-  push:
-    branches:
-    - 'fake_trunk'
-    paths:
-    - '_test/abc/**'
 permissions: {}
 defaults:
   run:
