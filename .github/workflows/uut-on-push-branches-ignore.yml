@@ -4,7 +4,39 @@ on:
   workflow_dispatch:
   push:
     branches-ignore:
+    # anything other than "_some_other_fake_trunk_name"
+    # this test workflow will constantly need to have dev branch names added
+    # here, otherwise it will fail on the PR test. just preface the whole thing
+    # with every initial letter and expect no legit branch to start with _.
+    # I realise now this is a fairly contrived test case but I've already built
+    # for it so may as well just do it.
     - 'fake_trunk'
+    - 'a*'
+    - 'b*'
+    - 'c*'
+    - 'd*'
+    - 'e*'
+    - 'f*'
+    - 'g*'
+    - 'h*'
+    - 'i*'
+    - 'j*'
+    - 'k*'
+    - 'l*'
+    - 'm*'
+    - 'n*'
+    - 'o*'
+    - 'p*'
+    - 'q*'
+    - 'r*'
+    - 's*'
+    - 't*'
+    - 'u*'
+    - 'v*'
+    - 'w*'
+    - 'x*'
+    - 'y*'
+    - 'z*'
     paths:
     - '_test/a/**'
 permissions: {}
