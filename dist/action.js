@@ -44810,6 +44810,8 @@ workflowsListedByAPI, listOfChangedFiles) {
                 // Check and gather all dispatchables that are triggered on push
                 if ('push' in workflow.on) {
                     if (thisWorkflowPassesTheChecksToAddItToTheComment(workflow, workflowPath, context, actionInputs, listOfChangedFiles)) {
+                        if (actionInputs.vvv)
+                            console.log(`--debug-- pushing wf to trigger-by-push-pre-list ${workflowPath}`);
                         dispatchableWorkflowsTriggeredByPush.push(workflowPath);
                     }
                 }
@@ -44821,6 +44823,8 @@ workflowsListedByAPI, listOfChangedFiles) {
                         console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${workflowPath}`);
                     }
                     else {
+                        if (actionInputs.vvv)
+                            console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`);
                         dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp);
                     }
                 }
