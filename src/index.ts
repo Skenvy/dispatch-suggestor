@@ -341,9 +341,20 @@ function thisPushWouldTriggerOnBranchesIgnore(
  * @param workflowPath
  * @returns
  */
-function thisPushWouldTriggerOnTags(workflowPath: string): { head: boolean; trunk: boolean } {
+function thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath: string): { head: boolean; trunk: boolean } {
   console.log(`${DWTBP_PREFIX} on <tags|tags-ignore>: Ignoring this workflow: ${workflowPath}`)
   return { head: false, trunk: false }
+}
+
+/**
+ * This just wraps logging and returning true after already exhausting checking
+ * for all four of the branches, branches-ignore, tags, and tags-ignore filters.
+ * @param workflowPath
+ * @returns
+ */
+function thisPushDoesntIncludeABranchOrTagFilter(workflowPath: string): { head: boolean; trunk: boolean } {
+  console.log(`${DWTBP_PREFIX} doesn't specify branch or tag filters: Ignoring this workflow: ${workflowPath}`)
+  return { head: true, trunk: true }
 }
 
 /**
@@ -377,8 +388,66 @@ function thisPushWouldTriggerOnAPushToRef(
     const onBranches = thisPushWouldTriggerOnBranches(workflow, context, actionInputs)
     logWhichRefsTriggerWorkflow(onBranches.head, onBranches.trunk, 'branches', workflowPath, context, actionInputs)
     return onBranches
+  } else if ('tags' in workflow.on.push || 'tags-ignore' in workflow.on.push) {
+    return thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath) // both statically false
   } else {
-    return thisPushWouldTriggerOnTags(workflowPath)
+    return thisPushDoesntIncludeABranchOrTagFilter(workflowPath) // both statically true
+  }
+}
+
+function changedFilesMatchThisPushPaths(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workflow: any,
+  workflowPath: string,
+  context: Context,
+  actionInputs: ActionInputs,
+  listOfChangedFiles: string[]
+): boolean {
+  return false
+}
+
+function changedFilesMatchThisPushPathsIgnore(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workflow: any,
+  workflowPath: string,
+  context: Context,
+  actionInputs: ActionInputs,
+  listOfChangedFiles: string[]
+): boolean {
+  return false
+}
+
+/**
+ * Aggregates the result of checking both the paths and paths-ignore filters.
+ * @param workflow
+ * @param workflowPath
+ * @param context
+ * @param actionInputs
+ * @param listOfChangedFiles
+ * @returns
+ */
+// Any required from output of yaml.parse
+// Runs in a context after already establishing workflow.on.push is non null.
+function theChangedFilesMatchThisPushesPathFilters(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workflow: any,
+  workflowPath: string,
+  context: Context,
+  actionInputs: ActionInputs,
+  listOfChangedFiles: string[]
+): boolean {
+  // 'paths-ignore' and 'paths' are mutually exclusive.
+  if ('paths-ignore' in workflow.on.push && workflow.on.push['paths-ignore'] != null) {
+    const res = changedFilesMatchThisPushPaths(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
+    console.log(`${DWTBP_PREFIX} specifies paths-ignore filters: Result was ${res} for: ${workflowPath}`)
+    return res
+  } else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
+    const res = changedFilesMatchThisPushPathsIgnore(workflow, workflowPath, context, actionInputs, listOfChangedFiles)
+    console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`)
+    return res
+  } else {
+    console.log(`${DWTBP_PREFIX} doesn't specify <paths|paths-ignore> filters: Ignoring this workflow: ${workflowPath}`)
+    return false
   }
 }
 
@@ -391,9 +460,32 @@ function thisPushWouldTriggerOnAPushToRef(
  * @param triggersOnPushTo
  * @returns
  */
-function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo: { head: boolean; trunk: boolean }): boolean {
-  // true IFF the trunk is true AND head is false.
-  return triggersOnPushTo.trunk ? !triggersOnPushTo.head : false
+function weWantToMentionThisWorkflowInTheComment(
+  triggersOnPushTo: { head: boolean; trunk: boolean },
+  triggersOnPushPath: boolean
+): boolean {
+  // true IFF the trunk is true AND head is false AND paths is true
+  return triggersOnPushTo.trunk ? !triggersOnPushTo.head && triggersOnPushPath : false
+}
+
+function thisWorkflowPassesTheChecksToAddItToTheComment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workflow: any,
+  workflowPath: string,
+  context: Context,
+  actionInputs: ActionInputs,
+  listOfChangedFiles: string[]
+): boolean {
+  // thisPushWouldTriggerOnAPushToRef will do a more contextualised log
+  const triggersOnPushTo = thisPushWouldTriggerOnAPushToRef(workflow, workflowPath, context, actionInputs)
+  const triggersOnPushPath = theChangedFilesMatchThisPushesPathFilters(
+    workflow,
+    workflowPath,
+    context,
+    actionInputs,
+    listOfChangedFiles
+  )
+  return weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPushPath)
 }
 
 function logGHRestAPIRateLimitHeaders(responseHeaders: ResponseHeaders) {
@@ -417,12 +509,13 @@ function logGHRestAPIRateLimitHeaders(responseHeaders: ResponseHeaders) {
  * @param actionInputs
  * @returns
  */
-async function getWorkflows(
+async function getDispatchableWorkflows(
   context: Context,
   actionInputs: ActionInputs,
   localWorkflowPaths: { directory: string; paths: string[] },
   // https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
-  workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response']
+  workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'],
+  listOfChangedFiles: string[]
 ): Promise<string[]> {
   try {
     // Remap the API's response
@@ -474,10 +567,15 @@ async function getWorkflows(
         }
         // Check and gather all dispatchables that are triggered on push
         if ('push' in workflow.on) {
-          // thisPushWouldTriggerOnAPushToRef will do a more contextualised log
-          const triggersOnPushTo = thisPushWouldTriggerOnAPushToRef(workflow, workflowPath, context, actionInputs)
-          // TODO NEXT BRANCH: Here is where we should implement the check / parser for <paths|paths-ignore>
-          if (weWantToMentionThisWorkflowInTheComment(triggersOnPushTo)) {
+          if (
+            thisWorkflowPassesTheChecksToAddItToTheComment(
+              workflow,
+              workflowPath,
+              context,
+              actionInputs,
+              listOfChangedFiles
+            )
+          ) {
             dispatchableWorkflowsTriggeredByPush.push(workflowPath)
           }
         } else {
@@ -533,8 +631,8 @@ export async function entrypoint(actionInputs: ActionInputs) {
     console.log('pullRequestNumber:', pullRequestNumber(context))
 
     // STEP ONE: Get the list of files changed by this PR.
-    const files = await fetchChangedFiles(context, actionInputs)
-    core.setOutput('list-of-changed-files', files)
+    const listOfChangedFiles = await fetchChangedFiles(context, actionInputs)
+    core.setOutput('list-of-changed-files', listOfChangedFiles)
 
     // Log the HEAD branch and the trunk branch names, used for checking against
     // the name of each branch in push trigger conditions
@@ -554,7 +652,13 @@ export async function entrypoint(actionInputs: ActionInputs) {
     logGHRestAPIRateLimitHeaders(workflowsListedByAPI.headers)
 
     // STEP TWO: Get the list of dispatchable workflows that we want to mention.
-    const dispatchableWorkflows = await getWorkflows(context, actionInputs, localWorkflowPaths, workflowsListedByAPI)
+    const dispatchableWorkflows = await getDispatchableWorkflows(
+      context,
+      actionInputs,
+      localWorkflowPaths,
+      workflowsListedByAPI,
+      listOfChangedFiles
+    )
     core.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows)
 
     // TODO NEXT BRANCH: See the line above that also starts with "TODO NEXT BRANCH"
