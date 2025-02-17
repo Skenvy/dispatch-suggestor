@@ -21,6 +21,7 @@ export type ActionInputs = {
   checkout_root: string
   log_event_payload: string
   log_workflow_triggers: string
+  inject_diff_paths: string
 }
 
 /**
@@ -34,6 +35,7 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
       checkout_root: core.getInput('checkout-root'),
       log_event_payload: core.getInput('log-event-payload'),
       log_workflow_triggers: core.getInput('log-workflow-triggers'),
+      inject_diff_paths: core.getInput('inject-diff-paths'),
       github_token: core.getInput('github_token')
     }
   } catch (error) {
@@ -174,7 +176,8 @@ function headRef(context: Context): string {
  * @returns A list of all files changed by this PR.
  */
 async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): Promise<string[]> {
-  let files: string[] = []
+  let actualFiles: string[] = []
+  let injectedFiles: string[] = []
   try {
     const result = await graphql<GQLQueryListPRFiles>({
       query: gql_query_list_PR_files,
@@ -187,11 +190,14 @@ async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): 
       }
     })
     try {
-      files = result.repository.pullRequest.files.edges.map((edge) => edge.node.path)
+      actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path)
+      injectedFiles = actionInputs.inject_diff_paths.split(',')
       const rateLimitInfo = result.rateLimit
-      console.log('Changed files:', files)
+      console.log('Changed files (actual):', actualFiles)
+      console.log('Changed files (inject):', injectedFiles)
       console.log('GraphQL Rate Limit Info:', rateLimitInfo)
-      core.notice(`Changed files: ${files.toString()}`)
+      core.notice(`Changed files (actual): ${actualFiles.toString()}`)
+      core.notice(`Changed files (inject): ${injectedFiles}`)
       core.notice(`GraphQL Rate Limit Info: ${JSON.stringify(rateLimitInfo)}`)
     } catch (error) {
       console.log('Error, dumping full API Response:', JSON.stringify(result, null, 2))
@@ -201,7 +207,7 @@ async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): 
     console.error('Error fetching changed files:', error)
     core.setFailed(`Error fetching changed files: ${error}`)
   }
-  return files
+  return actualFiles.concat(injectedFiles)
 }
 
 /**

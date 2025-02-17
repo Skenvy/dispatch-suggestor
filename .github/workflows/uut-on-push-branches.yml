@@ -1,12 +1,12 @@
 # Presence of this file used in development testing
-name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+name: UUT::on.push::branches
 on:
   workflow_dispatch:
   push:
-    branches-ignore:
-    - '*'
+    branches:
+    - 'fake_trunk'
     paths:
-    - '.github/workflows/dispatch-push.yaml'
+    - '_test/a/*'
 permissions: {}
 defaults:
   run:

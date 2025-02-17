@@ -1,7 +1,12 @@
 # Presence of this file used in development testing
-name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+name: UUT::on.push::tags
 on:
   workflow_dispatch:
+  push:
+    tags:
+    - 'fake_tag'
+    paths:
+    - '_test/a/*'
 permissions: {}
 defaults:
   run:
