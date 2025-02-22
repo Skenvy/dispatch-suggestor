@@ -43,6 +43,9 @@ Attempting to use co-pilot for the first time, it suggests a way of achieving th
     sparse-checkout: .github/workflows
     sparse-checkout-cone-mode: false
 ```
+<details>
+<summary>Co-pilot's generation</summary>
+
 #### Rest
 ```javascript
 const axios = require('axios');
@@ -410,3 +413,82 @@ async function fetchChangedFiles() {
 
 fetchChangedFiles();
 ```
+</details>
+
+### Handle comments on a PR
+Get comments on a PR and find any previous comments this action wrote on them and update them if necessary. I had a few questions for Co-pilot regarding acting with an identity specific to the action writing a comment, but unfortunately such a thing is apparently only possible when the thing the action does is instead written as a GitHub app, and installed by a user. As this is an action (primarily to enable sha-pinning, as the installted state of Apps are not versioned in any way) we'll have to accept that the identity commenting on the PRs will be that of the `github-actions[bot]`. So I asked co-pilot
+> If I do use the GITHUB_TOKEN to post a comment on a PR, and it has to be identified as the github actions bot, what's a good way for subsequent runs of the action that posts the comment to get all the comments that are already on the PR to try and find its previous comment so it can then update it rather than post new comments every subsequent run?
+
+It provided an answer that would put searchable text in the top of each comment. But knowing that would be visible and we can use html tags to hide content and might want a more unique identifier, I had to coax it with;
+> the only problem with that is that the botCommentIdentifier would be visible in the text of the comment, no? Is there some way to identify the comment the bot previously posted with a comment identifier that wouldn't be visible in the PR when viewed in the browser UI?
+
+This makes use of `@actions/github` to hit 3 REST endpoints;
+* [GET /repos/{owner}/{repo}/issues/{issue_number}/comments](https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments)
+    * if it doesn't exist yet: [POST /repos/{owner}/{repo}/issues/{issue_number}/comments](https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment)
+    * if the comment already exists: [PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}](https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#update-an-issue-comment)
+
+<details>
+<summary>Co-pilot's code</summary>
+
+```typescript
+const core = require('@actions/core');
+const github = require('@actions/github');
+
+async function run() {
+  try {
+    const token = process.env.GITHUB_TOKEN;
+    const octokit = github.getOctokit(token);
+    const context = github.context;
+
+    const { owner, repo } = context.repo;
+    const issueNumber = context.payload.pull_request.number;
+
+    // Fetch all comments on the PR
+    const { data: comments } = await octokit.rest.issues.listComments({
+      owner,
+      repo,
+      issue_number: issueNumber,
+    });
+
+    const botCommentIdentifier = '<!-- BOT_COMMENT_IDENTIFIER -->'; // Hidden identifier for the bot comment
+    let botComment = comments.find(comment => comment.user.login === 'github-actions[bot]' && comment.body.includes(botCommentIdentifier));
+
+    const newCommentBody = `${botCommentIdentifier}\n\nThis is the updated comment content.`;
+
+    if (botComment) {
+      // Update the existing comment
+      await octokit.rest.issues.updateComment({
+        owner,
+        repo,
+        comment_id: botComment.id,
+        body: newCommentBody,
+      });
+      console.log('Comment updated successfully.');
+    } else {
+      // Create a new comment
+      await octokit.rest.issues.createComment({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        body: newCommentBody,
+      });
+      console.log('Comment created successfully.');
+    }
+  } catch (error) {
+    core.setFailed(`Action failed with error: ${error.message}`);
+  }
+}
+
+run();
+```
+Someone probably needs to tell Co-pilot to run dependabot lol it wants this to be run with a workflow that uses ancient versions.
+```yaml
+- name: Checkout repository
+  uses: actions/checkout@v2
+- name: Setup Node.js
+  uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+```
+</details>
+

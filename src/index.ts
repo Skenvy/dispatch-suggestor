@@ -669,7 +669,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
     // Even though that func did this already, do it again for ts intellisense
     if (!context.payload.pull_request) return
 
-    // Otherwise, procede as usual, for a pull_request trigger.
+    // Otherwise, proceed as usual, for a pull_request trigger.
 
     // Prep Rest API
     const ghRestAPI = new Octokit({ auth: `Bearer ${actionInputs.github_token}` })
@@ -691,7 +691,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
     // If the checkout root directory doesn't exist, set failure and exit.
     if (theCheckoutRootDirectoryDoesntExist(actionInputs)) return
 
-    // Get the list of locally checkout out workflows.
+    // Get the list of locally checked out workflows.
     const localWorkflowPaths = utils.getFilesMatchingGithubWorkflows(actionInputs.checkout_root)
     // As well as the set of workflows known to the API.
     const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
@@ -710,7 +710,13 @@ export async function entrypoint(actionInputs: ActionInputs) {
     )
     core.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows)
 
-    // TODO NEXT BRANCH: See the line above that also starts with "TODO NEXT BRANCH"
+    // Get all the comments on this PR.
+    const commentsOnThisPR = await ghRestAPI.issues.listComments({
+      owner: owner(context),
+      repo: repoName(context),
+      issue_number: pullRequestNumber(context)
+    })
+    // STEP THREE: Create or update the comment that this action writes.
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
