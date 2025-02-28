@@ -60,7 +60,7 @@
     "yaml": "^2.7.0"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.2.6",
+    "@eslint/compat": "^1.2.7",
     "@github/local-action": "^2.6.1",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
