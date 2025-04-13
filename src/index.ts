@@ -527,7 +527,7 @@ function logWhichRefsTriggerWorkflow(
 
 /**
  * The logic for parsing the workflow.on.push.branches-ignore. Validates for the
- * HEAD and trunk branch names. TODO: validate for paths.
+ * HEAD and trunk branch names.
  * @param workflow
  * @param context
  * @param actionInputs
@@ -551,7 +551,7 @@ function thisPushWouldTriggerOnBranchesIgnore(
 
 /**
  * The logic for parsing the workflow.on.push.branches. Validates for the HEAD
- * and trunk branch names. TODO: validate for paths.
+ * and trunk branch names.
  * @param workflow
  * @param context
  * @param actionInputs
