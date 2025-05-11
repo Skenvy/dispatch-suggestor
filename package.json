@@ -52,35 +52,35 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
-    "@octokit/graphql": "^8.2.0",
-    "@octokit/rest": "^21.1.0",
+    "@actions/github": "^6.0.1",
+    "@octokit/graphql": "^8.2.2",
+    "@octokit/rest": "^21.1.1",
     "@octokit/types": "^14.0.0",
     "minimatch": "^10.0.1",
-    "yaml": "^2.7.0"
+    "yaml": "^2.7.1"
   },
   "devDepsComment": {
     "comment": "We don't use https://www.npmjs.com/package/@github/local-action for this, despite being suggested"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.2.7",
-    "@rollup/plugin-commonjs": "^28.0.2",
-    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@eslint/compat": "^1.2.9",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^22.13.5",
-    "@typescript-eslint/eslint-plugin": "^8.24.0",
-    "@typescript-eslint/parser": "^8.24.0",
-    "eslint": "^9.20.1",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-import-resolver-typescript": "^4.3.2",
+    "@types/node": "^22.15.17",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
+    "eslint": "^9.26.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-import-resolver-typescript": "^4.3.4",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-prettier": "^5.4.0",
     "make-coverage-badge": "^1.2.0",
-    "prettier": "^3.5.0",
-    "prettier-eslint": "^16.3.0",
-    "rollup": "^4.34.6",
-    "rollup-plugin-license": "^3.5.3",
+    "prettier": "^3.5.3",
+    "prettier-eslint": "^16.4.2",
+    "rollup": "^4.40.2",
+    "rollup-plugin-license": "^3.6.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }
