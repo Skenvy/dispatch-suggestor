@@ -171,3 +171,5 @@ jobs:
         | sed 's/ //g')" ]]
         && echo "Dispatchable workflows match expected"
         || (echo "Dispatchable workflows mismatch" && exit 1)
+    # Add the comment message body as an output of the action, and add a step
+    # here to check each invocation left behind the expected comment.
