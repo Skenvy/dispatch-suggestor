@@ -37,9 +37,9 @@ jobs:
           log-workflow-triggers: true
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
-            .github/workflows/uut-on-push-branches.yml]'
+            .github/workflows/uut-on-push-branches.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         # (non-default checkout-root internal)
@@ -50,9 +50,9 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
-            .github/workflows/uut-on-push-branches.yml]'
+            .github/workflows/uut-on-push-branches.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         # (non-default checkout-root external)
@@ -63,9 +63,9 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
-            .github/workflows/uut-on-push-branches.yml]'
+            .github/workflows/uut-on-push-branches.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         # (default checkout root, but a different trunk name)
@@ -76,7 +76,7 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/a/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-ignore.yml]'
+            [.github/workflows/uut-on-push-branches-ignore.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         # Now test the paths summon their respective workflows independently
@@ -87,9 +87,9 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/abc/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-abc.yml,
+            [.github/workflows/uut-on-push-branches-paths-abc.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-def.yml,
-            .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]'
+            .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         - job-name: PATHS XYZ
@@ -99,9 +99,9 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/xyz/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
-            .github/workflows/uut-on-push-branches-paths-xyz.yml]'
+            .github/workflows/uut-on-push-branches-paths-xyz.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: false
         # Test the ignore paths options (empty expects until the wf's they test are in main)
@@ -112,7 +112,7 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/def/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]'
+            [.github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: true
         - job-name: PATHS IGNORE GHI
@@ -122,7 +122,7 @@ jobs:
           log-workflow-triggers: false
           inject-diff-paths: '_test/ghi/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            '[.github/workflows/uut-on-push-branches-paths-ignore-def.yml]'
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml]
           vvv: false
           debug-integration-test-only-use-injected-paths: true
     steps:
