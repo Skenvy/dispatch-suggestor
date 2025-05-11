@@ -7,6 +7,7 @@ export type ActionInputs = {
     checkout_root: string;
     log_event_payload: boolean;
     log_workflow_triggers: boolean;
+    comment_unique_identifier: string;
     inject_diff_paths: string;
     vvv: boolean;
     DIT_only_use_injected_paths: boolean;

@@ -44600,6 +44600,7 @@ async function getActionInputs() {
             checkout_root: coreExports.getInput('checkout-root'),
             log_event_payload: coreExports.getInput('log-event-payload') !== 'false',
             log_workflow_triggers: coreExports.getInput('log-workflow-triggers') !== 'false',
+            comment_unique_identifier: coreExports.getInput('comment-unique-identifier'),
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
             vvv: coreExports.getInput('vvv') !== 'false',
             DIT_only_use_injected_paths: coreExports.getInput('DIT-only-use-injected-paths') !== 'false',
@@ -45189,6 +45190,23 @@ function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPus
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Components for "Part Three": Parse existing comments on the PR and do stuff.
+/**
+ * Name of the action / project
+ */
+const PROJECT_NAME = 'dispatch-suggestor';
+/**
+ * Link to the project's repo
+ */
+const PROJECT_URL = 'https://github.com/Skenvy/dispatch-suggestor';
+/**
+ * Format the HTML tag we are going to include in our comments and later check
+ * to verify if we've already commented or not.
+ * @param actionInputs
+ * @returns
+ */
+function commentUniqueIdentiferHtmlTag(actionInputs) {
+    return `<!-- ${PROJECT_NAME} :: ${PROJECT_URL} :: Unique Comment Identifier :: ${actionInputs.comment_unique_identifier} -->`;
+}
 /* For part three; we need to parse the comments that already exist on the PR
  * and get the comment IDs for comments that match an identifier. If some exist
  * then these are comments we'll need to update, otherwise we will need to
@@ -45200,13 +45218,16 @@ function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPus
  */
 /**
  * Produces the actual body of the message we are planning to comment with.
+ * @param actionInputs
  * @param dispatchableWorkflowsMetadata
  * @returns
  */
-function messageToWriteAsComment(
+function messageToWriteAsComment(actionInputs, 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 dispatchableWorkflowsMetadata) {
-    return 'TODO';
+    const commentUniqueIdentifer = commentUniqueIdentiferHtmlTag(actionInputs);
+    const messageBody = `${PROJECT_NAME} comment TODO ${actionInputs.comment_unique_identifier}`;
+    return `${commentUniqueIdentifer}\n${messageBody}`;
 }
 /**
  * Checks all comments on this PR to see if they start with our "identified" or
@@ -45218,15 +45239,29 @@ dispatchableWorkflowsMetadata) {
  * it doesn't need to update any that DO already exist.
  * @param _commentsOnThisPR
  * @param messageToWriteAsComment
+ * @param actionInputs
  * @returns
  */
 function getListOfCommentIDsForCommentsWithThisActionsIdentifier(
 // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-commentsOnThisPR, 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-messageToWriteAsComment) {
-    return { commentIDsToUpdate: null, commentIDsAlreadyUpToDate: null };
+commentsOnThisPR, messageToWriteAsComment, actionInputs) {
+    const commentIDsToUpdate = [];
+    const commentIDsAlreadyUpToDate = [];
+    const commentUniqueIdentifer = commentUniqueIdentiferHtmlTag(actionInputs);
+    for (const comment of commentsOnThisPR.data) {
+        if (comment.user &&
+            comment.user.login === 'github-actions[bot]' &&
+            comment.body &&
+            comment.body.includes(commentUniqueIdentifer)) {
+            if (comment.body === messageToWriteAsComment) {
+                commentIDsAlreadyUpToDate.push(comment.id);
+            }
+            else {
+                commentIDsToUpdate.push(comment.id);
+            }
+        }
+    }
+    return { commentIDsToUpdate: commentIDsToUpdate, commentIDsAlreadyUpToDate: commentIDsAlreadyUpToDate };
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Entrypoint
@@ -45291,14 +45326,54 @@ async function entrypoint(actionInputs) {
             repo: repoName(context),
             issue_number: pullRequestNumber(context)
         });
-        const commentBody = messageToWriteAsComment(dispatchableWorkflowsMetadata);
+        const commentBody = messageToWriteAsComment(actionInputs, dispatchableWorkflowsMetadata);
         // Get list of comment IDs we've already posted
-        const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody);
-        if (IDs.commentIDsToUpdate) ;
-        if (IDs.commentIDsAlreadyUpToDate) ;
+        const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody, actionInputs);
+        // Now knowing IDs we need to update or that are already up to date, and the
+        // message we want to write on those comments, pick the right thing to do.
+        // Note: "deleting" comments is something that could be added in the future
+        if (IDs.commentIDsToUpdate) {
+            // Unambiguously UPDATE these comments
+            // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#update-an-issue-comment
+            for (const idToUpdate of IDs.commentIDsToUpdate) {
+                console.log(`Comment-writer: UPDATING comment: ${idToUpdate}`);
+                await ghRestAPI.issues.updateComment({
+                    owner: owner(context),
+                    repo: repoName(context),
+                    comment_id: idToUpdate,
+                    body: commentBody,
+                    headers: {
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                });
+            }
+        }
+        if (IDs.commentIDsAlreadyUpToDate) {
+            // If these exist, then we don't need to create any new comments.
+            // Log that these exist and are already up to date and then close.
+            for (const idAlreadyUpToDate of IDs.commentIDsAlreadyUpToDate) {
+                console.log(`Comment-writer: Comments were ALREADY up to date: ${idAlreadyUpToDate}`);
+            }
+        }
         else if (IDs.commentIDsToUpdate === null) {
             // If there are no "comment IDs already up to date" and there weren't any
             // that we went and updated before, then we can create a new comment.
+            // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
+            const newComment = await ghRestAPI.issues.createComment({
+                owner: owner(context),
+                repo: repoName(context),
+                issue_number: pullRequestNumber(context),
+                body: commentBody,
+                headers: {
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
+            });
+            if (newComment.status === 201) {
+                console.log(`Comment-writer: Writing NEW comment success: ${newComment.data.id}`);
+            }
+            else {
+                console.log(`Comment-writer: Writing NEW comment failed: ${newComment.status}`);
+            }
         }
     }
     catch (error) {
