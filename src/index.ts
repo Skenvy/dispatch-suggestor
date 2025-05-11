@@ -823,7 +823,10 @@ function getListOfCommentIDsForCommentsWithThisActionsIdentifier(
   }
   console.log(`Comment-writer: IDs to Update: ${commentIDsToUpdate}`)
   console.log(`Comment-writer: IDs Already up to date: ${commentIDsAlreadyUpToDate}`)
-  return { commentIDsToUpdate: commentIDsToUpdate, commentIDsAlreadyUpToDate: commentIDsAlreadyUpToDate }
+  return {
+    commentIDsToUpdate: commentIDsToUpdate.length > 0 ? commentIDsToUpdate : null,
+    commentIDsAlreadyUpToDate: commentIDsAlreadyUpToDate.length > 0 ? commentIDsAlreadyUpToDate : null
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
