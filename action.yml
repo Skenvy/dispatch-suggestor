@@ -11,7 +11,7 @@ inputs:
   github_token:
     description: >-
       'Requires `permissions: { actions: read,
-      contents: read, pull-requests: read }`'
+      contents: read, pull-requests: write }`'
     required: true
   # Regularly expected inputs
   trunk-branch:
