@@ -9,6 +9,7 @@ export type ActionInputs = {
     log_workflow_triggers: boolean;
     inject_diff_paths: string;
     vvv: boolean;
+    DIT_only_use_injected_paths: boolean;
 };
 /**
  * Manages getting all the parameter inputs prior to running the action.

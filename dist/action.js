@@ -41,7 +41,7 @@ function getDefaultExportFromCjs (x) {
 }
 
 function getAugmentedNamespace(n) {
-  if (n.__esModule) return n;
+  if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
   var f = n.default;
 	if (typeof f == "function") {
 		var a = function a () {
@@ -11527,6 +11527,20 @@ function requirePool () {
 	      ? { ...options.interceptors }
 	      : undefined;
 	    this[kFactory] = factory;
+
+	    this.on('connectionError', (origin, targets, error) => {
+	      // If a connection error occurs, we remove the client from the pool,
+	      // and emit a connectionError event. They will not be re-used.
+	      // Fixes https://github.com/nodejs/undici/issues/3895
+	      for (const target of targets) {
+	        // Do not use kRemoveClient here, as it will close the client,
+	        // but the client cannot be closed in this state.
+	        const idx = this[kClients].indexOf(target);
+	        if (idx !== -1) {
+	          this[kClients].splice(idx, 1);
+	        }
+	      }
+	    });
 	  }
 
 	  [kGetDispatcher] () {
@@ -14988,6 +15002,7 @@ function requireHeaders () {
 	  isValidHeaderName,
 	  isValidHeaderValue
 	} = requireUtil$5();
+	const util = require$$0$2;
 	const { webidl } = requireWebidl();
 	const assert = require$$0$3;
 
@@ -15534,6 +15549,9 @@ function requireHeaders () {
 	  [Symbol.toStringTag]: {
 	    value: 'Headers',
 	    configurable: true
+	  },
+	  [util.inspect.custom]: {
+	    enumerable: false
 	  }
 	});
 
@@ -21423,9 +21441,10 @@ function requireUtil$1 () {
 	if (hasRequiredUtil$1) return util$1;
 	hasRequiredUtil$1 = 1;
 
-	const assert = require$$0$3;
-	const { kHeadersList } = requireSymbols$4();
-
+	/**
+	 * @param {string} value
+	 * @returns {boolean}
+	 */
 	function isCTLExcludingHtab (value) {
 	  if (value.length === 0) {
 	    return false
@@ -21686,31 +21705,13 @@ function requireUtil$1 () {
 	  return out.join('; ')
 	}
 
-	let kHeadersListNode;
-
-	function getHeadersList (headers) {
-	  if (headers[kHeadersList]) {
-	    return headers[kHeadersList]
-	  }
-
-	  if (!kHeadersListNode) {
-	    kHeadersListNode = Object.getOwnPropertySymbols(headers).find(
-	      (symbol) => symbol.description === 'headers list'
-	    );
-
-	    assert(kHeadersListNode, 'Headers cannot be parsed');
-	  }
-
-	  const headersList = headers[kHeadersListNode];
-	  assert(headersList);
-
-	  return headersList
-	}
-
 	util$1 = {
 	  isCTLExcludingHtab,
-	  stringify,
-	  getHeadersList
+	  validateCookieName,
+	  validateCookiePath,
+	  validateCookieValue,
+	  toIMFDate,
+	  stringify
 	};
 	return util$1;
 }
@@ -22048,7 +22049,7 @@ function requireCookies () {
 	hasRequiredCookies = 1;
 
 	const { parseSetCookie } = requireParse();
-	const { stringify, getHeadersList } = requireUtil$1();
+	const { stringify } = requireUtil$1();
 	const { webidl } = requireWebidl();
 	const { Headers } = requireHeaders();
 
@@ -22124,14 +22125,13 @@ function requireCookies () {
 
 	  webidl.brandCheck(headers, Headers, { strict: false });
 
-	  const cookies = getHeadersList(headers).cookies;
+	  const cookies = headers.getSetCookie();
 
 	  if (!cookies) {
 	    return []
 	  }
 
-	  // In older versions of undici, cookies is a list of name:value.
-	  return cookies.map((pair) => parseSetCookie(Array.isArray(pair) ? pair[1] : pair))
+	  return cookies.map((pair) => parseSetCookie(pair))
 	}
 
 	/**
@@ -28311,7 +28311,7 @@ const request$2 = withDefaults$6(endpoint$2, {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$d = "7.1.0";
+var VERSION$d = "7.1.1";
 
 // pkg/dist-src/error.js
 function _buildMessageForResponseErrors$1(data) {
@@ -28353,8 +28353,7 @@ function graphql$1(request2, query, options) {
       );
     }
     for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS$1.includes(key))
-        continue;
+      if (!FORBIDDEN_VARIABLE_OPTIONS$1.includes(key)) continue;
       return Promise.reject(
         new Error(
           `[@octokit/graphql] "${key}" cannot be used as variable name`
@@ -28472,7 +28471,7 @@ const createTokenAuth$1 = function createTokenAuth2(token) {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$c = "5.2.0";
+var VERSION$c = "5.2.1";
 
 // pkg/dist-src/index.js
 var noop$1 = () => {
@@ -32872,7 +32871,7 @@ var createTokenAuth = function createTokenAuth2(token) {
   });
 };
 
-const VERSION$4 = "6.1.4";
+const VERSION$4 = "6.1.5";
 
 const noop = () => {
 };
@@ -33138,7 +33137,7 @@ function paginateRest(octokit) {
 }
 paginateRest.VERSION = VERSION$2;
 
-const VERSION$1 = "13.3.1";
+const VERSION$1 = "13.5.0";
 
 const Endpoints = {
   actions: {
@@ -33166,6 +33165,7 @@ const Endpoints = {
     createEnvironmentVariable: [
       "POST /repos/{owner}/{repo}/environments/{environment_name}/variables"
     ],
+    createHostedRunnerForOrg: ["POST /orgs/{org}/actions/hosted-runners"],
     createOrUpdateEnvironmentSecret: [
       "PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
     ],
@@ -33202,6 +33202,9 @@ const Endpoints = {
     ],
     deleteEnvironmentVariable: [
       "DELETE /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    deleteHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
     ],
     deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
     deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
@@ -33291,6 +33294,24 @@ const Endpoints = {
     getGithubActionsPermissionsRepository: [
       "GET /repos/{owner}/{repo}/actions/permissions"
     ],
+    getHostedRunnerForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
+    ],
+    getHostedRunnersGithubOwnedImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/github-owned"
+    ],
+    getHostedRunnersLimitsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/limits"
+    ],
+    getHostedRunnersMachineSpecsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/machine-sizes"
+    ],
+    getHostedRunnersPartnerImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/partner"
+    ],
+    getHostedRunnersPlatformsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/platforms"
+    ],
     getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
     getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
     getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
@@ -33334,6 +33355,10 @@ const Endpoints = {
     listEnvironmentVariables: [
       "GET /repos/{owner}/{repo}/environments/{environment_name}/variables"
     ],
+    listGithubHostedRunnersInGroupForOrg: [
+      "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/hosted-runners"
+    ],
+    listHostedRunnersForOrg: ["GET /orgs/{org}/actions/hosted-runners"],
     listJobsForWorkflowRun: [
       "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"
     ],
@@ -33451,6 +33476,9 @@ const Endpoints = {
     ],
     updateEnvironmentVariable: [
       "PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    updateHostedRunnerForOrg: [
+      "PATCH /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
     ],
     updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
     updateRepoVariable: [
@@ -33969,6 +33997,26 @@ const Endpoints = {
     getAllTemplates: ["GET /gitignore/templates"],
     getTemplate: ["GET /gitignore/templates/{name}"]
   },
+  hostedCompute: {
+    createNetworkConfigurationForOrg: [
+      "POST /orgs/{org}/settings/network-configurations"
+    ],
+    deleteNetworkConfigurationFromOrg: [
+      "DELETE /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ],
+    getNetworkConfigurationForOrg: [
+      "GET /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ],
+    getNetworkSettingsForOrg: [
+      "GET /orgs/{org}/settings/network-settings/{network_settings_id}"
+    ],
+    listNetworkConfigurationsForOrg: [
+      "GET /orgs/{org}/settings/network-configurations"
+    ],
+    updateNetworkConfigurationForOrg: [
+      "PATCH /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ]
+  },
   interactions: {
     getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
     getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
@@ -34160,6 +34208,7 @@ const Endpoints = {
       "PUT /orgs/{org}/outside_collaborators/{username}"
     ],
     createInvitation: ["POST /orgs/{org}/invitations"],
+    createIssueType: ["POST /orgs/{org}/issue-types"],
     createOrUpdateCustomProperties: ["PATCH /orgs/{org}/properties/schema"],
     createOrUpdateCustomPropertiesValuesForRepos: [
       "PATCH /orgs/{org}/properties/values"
@@ -34169,6 +34218,7 @@ const Endpoints = {
     ],
     createWebhook: ["POST /orgs/{org}/hooks"],
     delete: ["DELETE /orgs/{org}"],
+    deleteIssueType: ["DELETE /orgs/{org}/issue-types/{issue_type_id}"],
     deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
     enableOrDisableSecurityProductOnAllOrgRepos: [
       "POST /orgs/{org}/{security_product}/{enablement}",
@@ -34185,6 +34235,10 @@ const Endpoints = {
     getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
     getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
     getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
+    getOrgRulesetHistory: ["GET /orgs/{org}/rulesets/{ruleset_id}/history"],
+    getOrgRulesetVersion: [
+      "GET /orgs/{org}/rulesets/{ruleset_id}/history/{version_id}"
+    ],
     getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
     getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
     getWebhookDelivery: [
@@ -34199,6 +34253,7 @@ const Endpoints = {
     listForAuthenticatedUser: ["GET /user/orgs"],
     listForUser: ["GET /users/{username}/orgs"],
     listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
+    listIssueTypes: ["GET /orgs/{org}/issue-types"],
     listMembers: ["GET /orgs/{org}/members"],
     listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
     listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
@@ -34273,6 +34328,7 @@ const Endpoints = {
     ],
     unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
     update: ["PATCH /orgs/{org}"],
+    updateIssueType: ["PUT /orgs/{org}/issue-types/{issue_type_id}"],
     updateMembershipForAuthenticatedUser: [
       "PATCH /user/memberships/orgs/{org}"
     ],
@@ -34386,35 +34442,181 @@ const Endpoints = {
     ]
   },
   projects: {
-    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}"],
-    createCard: ["POST /projects/columns/{column_id}/cards"],
-    createColumn: ["POST /projects/{project_id}/columns"],
-    createForAuthenticatedUser: ["POST /user/projects"],
-    createForOrg: ["POST /orgs/{org}/projects"],
-    createForRepo: ["POST /repos/{owner}/{repo}/projects"],
-    delete: ["DELETE /projects/{project_id}"],
-    deleteCard: ["DELETE /projects/columns/cards/{card_id}"],
-    deleteColumn: ["DELETE /projects/columns/{column_id}"],
-    get: ["GET /projects/{project_id}"],
-    getCard: ["GET /projects/columns/cards/{card_id}"],
-    getColumn: ["GET /projects/columns/{column_id}"],
+    addCollaborator: [
+      "PUT /projects/{project_id}/collaborators/{username}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.addCollaborator() is deprecated, see https://docs.github.com/rest/projects/collaborators#add-project-collaborator"
+      }
+    ],
+    createCard: [
+      "POST /projects/columns/{column_id}/cards",
+      {},
+      {
+        deprecated: "octokit.rest.projects.createCard() is deprecated, see https://docs.github.com/rest/projects/cards#create-a-project-card"
+      }
+    ],
+    createColumn: [
+      "POST /projects/{project_id}/columns",
+      {},
+      {
+        deprecated: "octokit.rest.projects.createColumn() is deprecated, see https://docs.github.com/rest/projects/columns#create-a-project-column"
+      }
+    ],
+    createForAuthenticatedUser: [
+      "POST /user/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.createForAuthenticatedUser() is deprecated, see https://docs.github.com/rest/projects/projects#create-a-user-project"
+      }
+    ],
+    createForOrg: [
+      "POST /orgs/{org}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.createForOrg() is deprecated, see https://docs.github.com/rest/projects/projects#create-an-organization-project"
+      }
+    ],
+    createForRepo: [
+      "POST /repos/{owner}/{repo}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.createForRepo() is deprecated, see https://docs.github.com/rest/projects/projects#create-a-repository-project"
+      }
+    ],
+    delete: [
+      "DELETE /projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.delete() is deprecated, see https://docs.github.com/rest/projects/projects#delete-a-project"
+      }
+    ],
+    deleteCard: [
+      "DELETE /projects/columns/cards/{card_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.deleteCard() is deprecated, see https://docs.github.com/rest/projects/cards#delete-a-project-card"
+      }
+    ],
+    deleteColumn: [
+      "DELETE /projects/columns/{column_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.deleteColumn() is deprecated, see https://docs.github.com/rest/projects/columns#delete-a-project-column"
+      }
+    ],
+    get: [
+      "GET /projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.get() is deprecated, see https://docs.github.com/rest/projects/projects#get-a-project"
+      }
+    ],
+    getCard: [
+      "GET /projects/columns/cards/{card_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.getCard() is deprecated, see https://docs.github.com/rest/projects/cards#get-a-project-card"
+      }
+    ],
+    getColumn: [
+      "GET /projects/columns/{column_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.getColumn() is deprecated, see https://docs.github.com/rest/projects/columns#get-a-project-column"
+      }
+    ],
     getPermissionForUser: [
-      "GET /projects/{project_id}/collaborators/{username}/permission"
+      "GET /projects/{project_id}/collaborators/{username}/permission",
+      {},
+      {
+        deprecated: "octokit.rest.projects.getPermissionForUser() is deprecated, see https://docs.github.com/rest/projects/collaborators#get-project-permission-for-a-user"
+      }
     ],
-    listCards: ["GET /projects/columns/{column_id}/cards"],
-    listCollaborators: ["GET /projects/{project_id}/collaborators"],
-    listColumns: ["GET /projects/{project_id}/columns"],
-    listForOrg: ["GET /orgs/{org}/projects"],
-    listForRepo: ["GET /repos/{owner}/{repo}/projects"],
-    listForUser: ["GET /users/{username}/projects"],
-    moveCard: ["POST /projects/columns/cards/{card_id}/moves"],
-    moveColumn: ["POST /projects/columns/{column_id}/moves"],
+    listCards: [
+      "GET /projects/columns/{column_id}/cards",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listCards() is deprecated, see https://docs.github.com/rest/projects/cards#list-project-cards"
+      }
+    ],
+    listCollaborators: [
+      "GET /projects/{project_id}/collaborators",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listCollaborators() is deprecated, see https://docs.github.com/rest/projects/collaborators#list-project-collaborators"
+      }
+    ],
+    listColumns: [
+      "GET /projects/{project_id}/columns",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listColumns() is deprecated, see https://docs.github.com/rest/projects/columns#list-project-columns"
+      }
+    ],
+    listForOrg: [
+      "GET /orgs/{org}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listForOrg() is deprecated, see https://docs.github.com/rest/projects/projects#list-organization-projects"
+      }
+    ],
+    listForRepo: [
+      "GET /repos/{owner}/{repo}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listForRepo() is deprecated, see https://docs.github.com/rest/projects/projects#list-repository-projects"
+      }
+    ],
+    listForUser: [
+      "GET /users/{username}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.projects.listForUser() is deprecated, see https://docs.github.com/rest/projects/projects#list-user-projects"
+      }
+    ],
+    moveCard: [
+      "POST /projects/columns/cards/{card_id}/moves",
+      {},
+      {
+        deprecated: "octokit.rest.projects.moveCard() is deprecated, see https://docs.github.com/rest/projects/cards#move-a-project-card"
+      }
+    ],
+    moveColumn: [
+      "POST /projects/columns/{column_id}/moves",
+      {},
+      {
+        deprecated: "octokit.rest.projects.moveColumn() is deprecated, see https://docs.github.com/rest/projects/columns#move-a-project-column"
+      }
+    ],
     removeCollaborator: [
-      "DELETE /projects/{project_id}/collaborators/{username}"
+      "DELETE /projects/{project_id}/collaborators/{username}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.removeCollaborator() is deprecated, see https://docs.github.com/rest/projects/collaborators#remove-user-as-a-collaborator"
+      }
     ],
-    update: ["PATCH /projects/{project_id}"],
-    updateCard: ["PATCH /projects/columns/cards/{card_id}"],
-    updateColumn: ["PATCH /projects/columns/{column_id}"]
+    update: [
+      "PATCH /projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.update() is deprecated, see https://docs.github.com/rest/projects/projects#update-a-project"
+      }
+    ],
+    updateCard: [
+      "PATCH /projects/columns/cards/{card_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.updateCard() is deprecated, see https://docs.github.com/rest/projects/cards#update-an-existing-project-card"
+      }
+    ],
+    updateColumn: [
+      "PATCH /projects/columns/{column_id}",
+      {},
+      {
+        deprecated: "octokit.rest.projects.updateColumn() is deprecated, see https://docs.github.com/rest/projects/columns#update-an-existing-project-column"
+      }
+    ]
   },
   pulls: {
     checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
@@ -34787,6 +34989,12 @@ const Endpoints = {
     ],
     getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
     getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    getRepoRulesetHistory: [
+      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history"
+    ],
+    getRepoRulesetVersion: [
+      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history/{version_id}"
+    ],
     getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
     getStatusChecksProtection: [
       "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
@@ -34960,7 +35168,13 @@ const Endpoints = {
   search: {
     code: ["GET /search/code"],
     commits: ["GET /search/commits"],
-    issuesAndPullRequests: ["GET /search/issues"],
+    issuesAndPullRequests: [
+      "GET /search/issues",
+      {},
+      {
+        deprecated: "octokit.rest.search.issuesAndPullRequests() is deprecated, see https://docs.github.com/rest/search/search#search-issues-and-pull-requests"
+      }
+    ],
     labels: ["GET /search/labels"],
     repos: ["GET /search/repositories"],
     topics: ["GET /search/topics"],
@@ -35015,13 +35229,35 @@ const Endpoints = {
       "PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"
     ],
     addOrUpdateProjectPermissionsInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+      "PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.addOrUpdateProjectPermissionsInOrg() is deprecated, see https://docs.github.com/rest/teams/teams#add-or-update-team-project-permissions"
+      }
+    ],
+    addOrUpdateProjectPermissionsLegacy: [
+      "PUT /teams/{team_id}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.addOrUpdateProjectPermissionsLegacy() is deprecated, see https://docs.github.com/rest/teams/teams#add-or-update-team-project-permissions-legacy"
+      }
     ],
     addOrUpdateRepoPermissionsInOrg: [
       "PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
     ],
     checkPermissionsForProjectInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+      "GET /orgs/{org}/teams/{team_slug}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.checkPermissionsForProjectInOrg() is deprecated, see https://docs.github.com/rest/teams/teams#check-team-permissions-for-a-project"
+      }
+    ],
+    checkPermissionsForProjectLegacy: [
+      "GET /teams/{team_id}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.checkPermissionsForProjectLegacy() is deprecated, see https://docs.github.com/rest/teams/teams#check-team-permissions-for-a-project-legacy"
+      }
     ],
     checkPermissionsForRepoInOrg: [
       "GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
@@ -35059,13 +35295,37 @@ const Endpoints = {
     listPendingInvitationsInOrg: [
       "GET /orgs/{org}/teams/{team_slug}/invitations"
     ],
-    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects"],
+    listProjectsInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.teams.listProjectsInOrg() is deprecated, see https://docs.github.com/rest/teams/teams#list-team-projects"
+      }
+    ],
+    listProjectsLegacy: [
+      "GET /teams/{team_id}/projects",
+      {},
+      {
+        deprecated: "octokit.rest.teams.listProjectsLegacy() is deprecated, see https://docs.github.com/rest/teams/teams#list-team-projects-legacy"
+      }
+    ],
     listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
     removeMembershipForUserInOrg: [
       "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"
     ],
     removeProjectInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+      "DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.removeProjectInOrg() is deprecated, see https://docs.github.com/rest/teams/teams#remove-a-project-from-a-team"
+      }
+    ],
+    removeProjectLegacy: [
+      "DELETE /teams/{team_id}/projects/{project_id}",
+      {},
+      {
+        deprecated: "octokit.rest.teams.removeProjectLegacy() is deprecated, see https://docs.github.com/rest/teams/teams#remove-a-project-from-a-team-legacy"
+      }
     ],
     removeRepoInOrg: [
       "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
@@ -37778,6 +38038,8 @@ const binary = {
         }
     },
     stringify({ comment, type, value }, ctx, onComment, onChompKeep) {
+        if (!value)
+            return '';
         const buf = value; // checked earlier by binary.identify()
         let str;
         if (typeof btoa === 'function') {
@@ -38259,7 +38521,7 @@ const timestamp = {
         }
         return new Date(date);
     },
-    stringify: ({ value }) => value.toISOString().replace(/(T00:00:00)?\.000Z$/, '')
+    stringify: ({ value }) => value?.toISOString().replace(/(T00:00:00)?\.000Z$/, '') ?? ''
 };
 
 const schema = [
@@ -39496,8 +39758,8 @@ function composeCollection(CN, ctx, token, props, onError) {
             tag = kt;
         }
         else {
-            if (kt?.collection) {
-                onError(tagToken, 'BAD_COLLECTION_TYPE', `${kt.tag} used for ${expType} collection, but expects ${kt.collection}`, true);
+            if (kt) {
+                onError(tagToken, 'BAD_COLLECTION_TYPE', `${kt.tag} used for ${expType} collection, but expects ${kt.collection ?? 'scalar'}`, true);
             }
             else {
                 onError(tagToken, 'TAG_RESOLVE_FAILED', `Unresolved tag: ${tagName}`, true);
@@ -41865,7 +42127,20 @@ class Parser {
                 default: {
                     const bv = this.startBlockValue(map);
                     if (bv) {
-                        if (atMapIndent && bv.type !== 'block-seq') {
+                        if (bv.type === 'block-seq') {
+                            if (!it.explicitKey &&
+                                it.sep &&
+                                !includesToken(it.sep, 'newline')) {
+                                yield* this.pop({
+                                    type: 'error',
+                                    offset: this.offset,
+                                    message: 'Unexpected block-seq-ind on same line with key',
+                                    source: this.source
+                                });
+                                return;
+                            }
+                        }
+                        else if (atMapIndent) {
                             map.items.push({ start });
                         }
                         this.stack.push(bv);
@@ -44326,6 +44601,7 @@ async function getActionInputs() {
             log_workflow_triggers: coreExports.getInput('log-workflow-triggers') !== 'false',
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
             vvv: coreExports.getInput('vvv') !== 'false',
+            DIT_only_use_injected_paths: coreExports.getInput('DIT-only-use-injected-paths') !== 'false',
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -44338,28 +44614,131 @@ async function getActionInputs() {
     }
 }
 /**
- * Logs the event payload if set to.
- * @param actionInput
- */
-function logEventPayload(actionInputs) {
-    // Print the JSON webhook payload for the event that triggered the workflow
-    if (actionInputs.log_event_payload) {
-        console.log('The event payload:', JSON.stringify(githubExports.context.payload, undefined, 2));
-    }
-}
-/**
  * Sets the step status to failed if the event that triggered this wasn't a PR.
  * @param eventName
  * @param context
  * @returns
  */
-function thisIsntAPullRequestEvent(context) {
+function failTheActionIfThisIsntAPullRequestEvent(actionName, context) {
     const thisIsntAPR = context.eventName !== 'pull_request' || !context.payload.pull_request;
     if (thisIsntAPR) {
-        coreExports.setFailed(`dispatch-suggestor can only be run from a pull_request event. Was ${context.eventName} event.`);
+        coreExports.setFailed(`${actionName} can only be run from a pull_request event. Was ${context.eventName} event.`);
     }
     return thisIsntAPR;
 }
+/**
+ * Retrieve the repository owner from context
+ * @param context
+ * @returns
+ */
+function owner(context) {
+    return context.repo.owner;
+}
+/**
+ * Retrieve the repository name from context
+ * @param context
+ * @returns
+ */
+function repoName(context) {
+    return context.repo.repo;
+}
+/**
+ * Retrieve the pull request number from context
+ * @param context
+ * @returns
+ */
+function pullRequestNumber(context) {
+    // called only after `if (failTheActionIfThisIsntAPullRequestEvent)`
+    return context.payload.pull_request.number;
+}
+/**
+ * Retrieve the HEAD ref from context.
+ *
+ * Used when templating the dispatch trigger URL.
+ * @param context
+ * @returns
+ */
+function headRef(context) {
+    // called only after `if (failTheActionIfThisIsntAPullRequestEvent)`
+    return context.payload.pull_request.head.ref;
+}
+/**
+ * Returns the sanitised head ref -- the HEAD branch name.
+ * @param context
+ * @returns
+ */
+function headBranch(context) {
+    return sanitiseString(headRef(context));
+}
+/**
+ * Log+Notice the rate limit from the response headers for the GitHub REST API.
+ * @param responseHeaders
+ */
+function logGHRestAPIRateLimitHeaders(responseHeaders) {
+    const ratelimitInfo = {};
+    ratelimitInfo['x-ratelimit-limit'] = responseHeaders['x-ratelimit-limit'];
+    ratelimitInfo['x-ratelimit-remaining'] = responseHeaders['x-ratelimit-remaining'];
+    ratelimitInfo['x-ratelimit-reset'] = responseHeaders['x-ratelimit-reset'];
+    ratelimitInfo['x-ratelimit-resource'] = responseHeaders['x-ratelimit-resource'];
+    ratelimitInfo['x-ratelimit-used'] = responseHeaders['x-ratelimit-used'];
+    console.log('REST Rate Limit Info:', ratelimitInfo);
+    coreExports.notice(`REST Rate Limit Info: ${JSON.stringify(ratelimitInfo)}`);
+}
+/**
+ * Remap the list-repository-workflows API response, so we have a map that gives
+ * us each workflow definition accessed by the key that is the paths.
+ * @param workflowsListedByAPI
+ * @returns
+ */
+function mapListRepositoryWorkflows(
+// https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
+workflowsListedByAPI, onlyIncludeThesePaths) {
+    let mappedWfs = workflowsListedByAPI.data.workflows.map((workflow) => ({
+        path: workflow.path,
+        metadata: workflow
+    }));
+    if (onlyIncludeThesePaths) {
+        mappedWfs = mappedWfs.filter((wf) => onlyIncludeThesePaths.includes(wf.path));
+    }
+    return new Map(mappedWfs.map((wf) => [wf.path, wf.metadata]));
+}
+////////////////////////////////////////////////////////////////////////////////
+// Generic action setup and other functions for _this_ action
+// Assumes the existence of the ActionInputs.
+const ACTION_NAME = 'dispatch-suggestor';
+/**
+ * Returns the sanitised trunk ref -- the TRUNK branch name e.g. main master etc
+ * @param actionInputs
+ * @returns
+ */
+function trunkBranch(actionInputs) {
+    return sanitiseString(actionInputs.trunk_branch);
+}
+/**
+ * Logs the event payload if set to.
+ * @param actionInput
+ */
+function logEventPayload(actionInputs, context) {
+    // Print the JSON webhook payload for the event that triggered the workflow
+    if (actionInputs.log_event_payload) {
+        console.log('The event payload:', JSON.stringify(context.payload, undefined, 2));
+    }
+}
+/**
+ * If the "checkout-root" directory doesn't exist, set failure and return true.
+ * @param actionInputs
+ * @returns
+ */
+function theCheckoutRootDirectoryDoesntExist(actionInputs) {
+    const checkoutRootNotExist = !fs.existsSync(actionInputs.checkout_root);
+    if (checkoutRootNotExist) {
+        coreExports.setFailed(`The specified path in checkout-root doesn't exist: ${actionInputs.checkout_root}`);
+    }
+    return checkoutRootNotExist;
+}
+////////////////////////////////////////////////////////////////////////////////
+// Components for "Part One": Getting the list of files changed by this PR
+// A GQL query, a GQL type, and the fetching function.
 /**
  * Query for the list of files changed by this PR + the graphql API ratelimit
  */
@@ -44387,42 +44766,6 @@ const gql_query_list_PR_files = `
   }
 `;
 /**
- * Retrieve the repository owner from context
- * @param context
- * @returns
- */
-function owner(context) {
-    return context.repo.owner;
-}
-/**
- * Retrieve the repository name from context
- * @param context
- * @returns
- */
-function repoName(context) {
-    return context.repo.repo;
-}
-/**
- * Retrieve the pull request number from context
- * @param context
- * @returns
- */
-function pullRequestNumber(context) {
-    // called only after `if (thisIsntAPullRequestEvent)`
-    return context.payload.pull_request.number;
-}
-/**
- * Retrieve the HEAD ref from context.
- *
- * Used when templating the dispatch trigger URL.
- * @param context
- * @returns
- */
-function headRef(context) {
-    // called only after `if (thisIsntAPullRequestEvent)`
-    return context.payload.pull_request.head.ref;
-}
-/**
  * STEP ONE: Get the list of files this PR touches.
  *
  * At the moment this is done with the graphql endpoint. If for some reason that
@@ -44447,7 +44790,15 @@ async function fetchChangedFiles(context, actionInputs) {
             }
         });
         try {
-            actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+            if (actionInputs.DIT_only_use_injected_paths) {
+                console.log('A "debug integration test" input, has been used!');
+                console.log('Ignoring "Actual files", only using the injected file names.');
+                coreExports.warning('A "debug integration test" input, has been used!');
+                coreExports.warning('Ignoring "Actual files", only using the injected file names.');
+            }
+            else {
+                actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+            }
             injectedFiles = actionInputs.inject_diff_paths.split(',');
             const rateLimitInfo = result.rateLimit;
             console.log('Changed files (actual):', actualFiles);
@@ -44468,18 +44819,8 @@ async function fetchChangedFiles(context, actionInputs) {
     }
     return actualFiles.concat(injectedFiles);
 }
-/**
- * If the "checkout-root" directory doesn't exist, set failure and return true.
- * @param actionInputs
- * @returns
- */
-function theCheckoutRootDirectoryDoesntExist(actionInputs) {
-    const checkoutRootNotExist = !fs.existsSync(actionInputs.checkout_root);
-    if (checkoutRootNotExist) {
-        coreExports.setFailed(`The specified path in checkout-root doesn't exist: ${actionInputs.checkout_root}`);
-    }
-    return checkoutRootNotExist;
-}
+////////////////////////////////////////////////////////////////////////////////
+// Components for "Part Two": Parse the workflows to find relevant dispatchables
 /*
  * STEP TWO: Get the set of triggering conditions for all trunk workflows. The
  * rest API for a github_token has a rate limit of 1000/hour/repo. Thats not all
@@ -44489,265 +44830,9 @@ function theCheckoutRootDirectoryDoesntExist(actionInputs) {
  * workflow that runs it to have run actions/checkout.
  */
 /**
- * Returns the sanitised head ref -- the HEAD branch name.
- * @param context
- * @returns
+ * Minify logs+notices that start with this prefix
  */
-function headBranch(context) {
-    return sanitiseString(headRef(context));
-}
-/**
- * Returns the sanitised trunk ref -- the TRUNK branch name.
- * @param actionInputs
- * @returns
- */
-function trunkBranch(actionInputs) {
-    return sanitiseString(actionInputs.trunk_branch);
-}
 const DWTBP_PREFIX = 'Dispatchable workflow triggered by push:';
-function logWhichRefsTriggerWorkflow(headWouldTriggerThis, trunkWouldTriggerThis, onRefParseRule, workflowPath, context, actionInputs) {
-    if (headWouldTriggerThis) {
-        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Head (this) "${headBranch(context)}" will trigger: ${workflowPath}`);
-    }
-    if (trunkWouldTriggerThis) {
-        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Trunk "${trunkBranch(actionInputs)}" will trigger: ${workflowPath}`);
-    }
-    if (!trunkWouldTriggerThis && !headWouldTriggerThis) {
-        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Neither trunk nor head would trigger this: ${workflowPath}`);
-    }
-}
-/**
- * The logic for parsing the workflow.on.push.branches. Validates for the HEAD
- * and trunk branch names. TODO: validate for paths.
- * @param workflow
- * @param context
- * @param actionInputs
- * @returns
- */
-function thisPushWouldTriggerOnBranches(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, context, actionInputs) {
-    // Only branches is supposed to be used with the negating case. Check the
-    // trunk IS one of the patterns, but also that the triggering headBranch
-    // isn't. Branches can start with ! so we have to filter through all.
-    let trunkWouldTriggerThis = false;
-    let headWouldTriggerThis = false;
-    let positiveCheck;
-    let onBranch;
-    const onBranches = workflow.on.push.branches;
-    for (const _onBranch of onBranches) {
-        // Check each "would trigger" through all triggers in order.
-        // First check for inverse condition / sanitise branch
-        positiveCheck = _onBranch.slice(0, 1) != '!';
-        onBranch = positiveCheck ? _onBranch : _onBranch.slice(1);
-        // For both refs, test the pattern against the ref. If the ref
-        // matches the pattern, then apply the inverse of the inverse
-        // condition. Otherwise leave it as its current value.
-        trunkWouldTriggerThis = minimatch(trunkBranch(actionInputs), onBranch) ? positiveCheck : trunkWouldTriggerThis;
-        headWouldTriggerThis = minimatch(headBranch(context), onBranch) ? positiveCheck : headWouldTriggerThis;
-    }
-    return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
-}
-/**
- * The logic for parsing the workflow.on.push.branches-ignore. Validates for the
- * HEAD and trunk branch names. TODO: validate for paths.
- * @param workflow
- * @param context
- * @param actionInputs
- * @returns
- */
-function thisPushWouldTriggerOnBranchesIgnore(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, context, actionInputs) {
-    // If branches-ignore is present, no need to check for negation.
-    const trunkWouldTriggerThis = !workflow.on.push['branches-ignore']
-        .map((branch) => minimatch(trunkBranch(actionInputs), branch))
-        .includes(true);
-    const headWouldTriggerThis = !workflow.on.push['branches-ignore']
-        .map((branch) => minimatch(headBranch(context), branch))
-        .includes(true);
-    return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
-}
-/**
- * This just wraps logging and returning false after checking for either
- * branches or branches-ignore. We don't handle tags.
- * @param workflowPath
- * @returns
- */
-function thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath) {
-    console.log(`${DWTBP_PREFIX} on <tags|tags-ignore>: Ignoring this workflow: ${workflowPath}`);
-    return { head: false, trunk: false };
-}
-/**
- * This just wraps logging and returning true after already exhausting checking
- * for all four of the branches, branches-ignore, tags, and tags-ignore filters.
- * @param workflowPath
- * @returns
- */
-function thisPushDoesntIncludeABranchOrTagFilter(workflowPath) {
-    console.log(`${DWTBP_PREFIX} doesn't specify branch or tag filters: Ignoring this workflow: ${workflowPath}`);
-    return { head: true, trunk: true };
-}
-/**
- * The logic for parsing the workflow.on.push.<branches|branches-ignore>.
- * Returns an object that provides _.head and _.trunk as true if those refs are
- * matched by the ordered globs on the <branches|branches-ignore>, and false if
- * they are not matched, or are negatively matched. Returns false for both if
- * neither the <branches|branches-ignore> field exists, as this does not care
- * about tag refs.
- * @param workflow
- * @param workflowPath
- * @param context
- * @param actionInputs
- * @returns
- */
-// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
-// Any required from output of yaml.parse
-// Runs in a context after already establishing workflow.on.push is non null.
-function thisPushWouldTriggerOnAPushToRef(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, workflowPath, context, actionInputs) {
-    // 'branches-ignore' and 'branches' are mutually exclusive.
-    if ('branches-ignore' in workflow.on.push && workflow.on.push['branches-ignore'] != null) {
-        const onBrIgn = thisPushWouldTriggerOnBranchesIgnore(workflow, context, actionInputs);
-        logWhichRefsTriggerWorkflow(onBrIgn.head, onBrIgn.trunk, 'branches-ignore', workflowPath, context, actionInputs);
-        return onBrIgn;
-    }
-    else if ('branches' in workflow.on.push && workflow.on.push.branches != null) {
-        const onBranches = thisPushWouldTriggerOnBranches(workflow, context, actionInputs);
-        logWhichRefsTriggerWorkflow(onBranches.head, onBranches.trunk, 'branches', workflowPath, context, actionInputs);
-        return onBranches;
-    }
-    else if ('tags' in workflow.on.push || 'tags-ignore' in workflow.on.push) {
-        return thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath); // both statically false
-    }
-    else {
-        return thisPushDoesntIncludeABranchOrTagFilter(workflowPath); // both statically true
-    }
-}
-/**
- * True if any of the changed paths are not ignored by the paths-ignore filter.
- * @param workflow
- * @param listOfChangedFiles
- * @returns
- */
-function changedFilesFilteredThisPushPathsIgnore(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, listOfChangedFiles) {
-    // If paths-ignore is present, no need to check for negation.
-    // If any file in the list of changed files is not ignored by one of the
-    // ignore globs, then true
-    return listOfChangedFiles
-        .map((changedFile) => 
-    // each changed file maps to the rolled up result of testing it against all
-    // ignore globs, testing for a true match against any of them.
-    workflow.on.push['paths-ignore']
-        .map((pathIgnoreGlob) => minimatch(changedFile, pathIgnoreGlob))
-        .includes(true))
-        .includes(false);
-    // and finally makes sure that at least one of the changed files DIDN'T match
-}
-/**
- * True if any of the changed paths filter through all the filtering globs.
- * @param workflow
- * @param actionInputs
- * @param listOfChangedFiles
- * @returns
- */
-function changedFilesFilteredThisPushPaths(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, actionInputs, listOfChangedFiles) {
-    // Only paths is supposed to be used with the negating case.
-    const changedFilesPassedFilter = [];
-    for (let i = 0; i < listOfChangedFiles.length; i += 1) {
-        changedFilesPassedFilter.push(false);
-    }
-    let positiveCheck;
-    let pathGlob;
-    for (const _pathGlob of workflow.on.push['paths']) {
-        // First check for inverse condition / sanitise path
-        positiveCheck = _pathGlob.slice(0, 1) != '!';
-        pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1);
-        for (let i = 0; i < listOfChangedFiles.length; i += 1) {
-            if (actionInputs.vvv)
-                console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`);
-            if (actionInputs.vvv)
-                console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`);
-            if (actionInputs.vvv)
-                console.log(`--debug-- does glob match? ${minimatch(listOfChangedFiles[i], pathGlob)}`);
-            // If this changed file name matches the path glob then we update its
-            // value to whatever the positive check is, otherwise leave same.
-            changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
-                ? positiveCheck
-                : changedFilesPassedFilter[i];
-            if (actionInputs.vvv)
-                console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`);
-        }
-    }
-    return changedFilesPassedFilter.includes(true);
-}
-/**
- * Aggregates the result of checking both the paths and paths-ignore filters.
- * @param workflow
- * @param workflowPath
- * @param context
- * @param actionInputs
- * @param listOfChangedFiles
- * @returns
- */
-// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
-// Any required from output of yaml.parse
-// Runs in a context after already establishing workflow.on.push is non null.
-function theChangedFilesMatchThisPushesPathFilters(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
-    // 'paths-ignore' and 'paths' are mutually exclusive.
-    if ('paths-ignore' in workflow.on.push && workflow.on.push['paths-ignore'] != null) {
-        const res = changedFilesFilteredThisPushPathsIgnore(workflow, listOfChangedFiles);
-        console.log(`${DWTBP_PREFIX} specifies paths-ignore filters: Result was ${res} for: ${workflowPath}`);
-        return res;
-    }
-    else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
-        const res = changedFilesFilteredThisPushPaths(workflow, actionInputs, listOfChangedFiles);
-        console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`);
-        return res;
-    }
-    else {
-        console.log(`${DWTBP_PREFIX} doesn't specify <paths|paths-ignore> filters: Ignoring this workflow: ${workflowPath}`);
-        return false;
-    }
-}
-/**
- * Right now we only want to comment for dispatchable workflows that would
- * trigger on pushes to the trunk but ignore those that have already been
- * triggered by pushes to the non-trunk headref. This abstraction exists in
- * case later on we want to handle an option to include any branch that will
- * be triggered on the trunk regardless if they have already been triggered.
- * @param triggersOnPushTo
- * @returns
- */
-function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPushPath) {
-    // true IFF the trunk is true AND head is false AND paths is true
-    return triggersOnPushTo.trunk ? !triggersOnPushTo.head && triggersOnPushPath : false;
-}
-function thisWorkflowPassesTheChecksToAddItToTheComment(
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
-    // thisPushWouldTriggerOnAPushToRef will do a more contextualised log
-    const triggersOnPushTo = thisPushWouldTriggerOnAPushToRef(workflow, workflowPath, context, actionInputs);
-    const triggersOnPushPath = theChangedFilesMatchThisPushesPathFilters(workflow, workflowPath, context, actionInputs, listOfChangedFiles);
-    return weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPushPath);
-}
-function logGHRestAPIRateLimitHeaders(responseHeaders) {
-    const ratelimitInfo = {};
-    ratelimitInfo['x-ratelimit-limit'] = responseHeaders['x-ratelimit-limit'];
-    ratelimitInfo['x-ratelimit-remaining'] = responseHeaders['x-ratelimit-remaining'];
-    ratelimitInfo['x-ratelimit-reset'] = responseHeaders['x-ratelimit-reset'];
-    ratelimitInfo['x-ratelimit-resource'] = responseHeaders['x-ratelimit-resource'];
-    ratelimitInfo['x-ratelimit-used'] = responseHeaders['x-ratelimit-used'];
-    console.log('REST Rate Limit Info:', ratelimitInfo);
-    coreExports.notice(`REST Rate Limit Info: ${JSON.stringify(ratelimitInfo)}`);
-}
 /**
  * STEP TWO: Get the list of dispatchable workflows that we want to mention.
  *
@@ -44763,7 +44848,7 @@ async function getDispatchableWorkflows(context, actionInputs, localWorkflowPath
 workflowsListedByAPI, listOfChangedFiles) {
     try {
         // Remap the API's response
-        const workflowsAPI = new Map(workflowsListedByAPI.data.workflows.map((workflow) => [workflow.path, workflow]));
+        const workflowsAPI = mapListRepositoryWorkflows(workflowsListedByAPI, null);
         // Get details of each workflow
         console.log('All workflows LOCAL are ', localWorkflowPaths.paths.toString());
         console.log('All workflows API are ', Array.from(workflowsAPI.keys()).toString());
@@ -44844,31 +44929,338 @@ workflowsListedByAPI, listOfChangedFiles) {
     }
 }
 /**
+ * Wraps getting the status of:
+ *
+ * 1. Does the HEAD branch trigger this dispatchable's push?
+ * 2. Does the TRUNK branch trigger this dispatchable's push?
+ * 3. Do the files that changed in this PR trigger this dispatchable's push?
+ *
+ * And then using the results of those checks to answer whether or not we want
+ * to mention this workflow in the comment we're going to leave on the PR.
+ * @param workflow
+ * @param workflowPath
+ * @param context
+ * @param actionInputs
+ * @param listOfChangedFiles
+ * @returns
+ */
+function thisWorkflowPassesTheChecksToAddItToTheComment(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
+    // thisPushWouldTriggerOnAPushToBranch will do a more contextualised log
+    const triggersOnPushBranch = thisPushWouldTriggerOnAPushToBranch(workflow, workflowPath, context, actionInputs);
+    const triggersOnPushPath = theChangedFilesMatchThisPushesPathFilters(workflow, workflowPath, context, actionInputs, listOfChangedFiles);
+    return weWantToMentionThisWorkflowInTheComment(triggersOnPushBranch, triggersOnPushPath);
+}
+/**
+ * The logic for parsing the workflow.on.push.<branches|branches-ignore>.
+ * Returns an object that provides _.head and _.trunk as true if those refs are
+ * matched by the ordered globs on the <branches|branches-ignore>, and false if
+ * they are not matched, or are negatively matched. Returns false for both if
+ * neither the <branches|branches-ignore> field exists, as this does not care
+ * about tag refs.
+ * @param workflow
+ * @param workflowPath
+ * @param context
+ * @param actionInputs
+ * @returns
+ */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
+// Any required from output of yaml.parse
+// Runs in a context after already establishing workflow.on.push is non null.
+function thisPushWouldTriggerOnAPushToBranch(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, workflowPath, context, actionInputs) {
+    // 'branches-ignore' and 'branches' are mutually exclusive.
+    if ('branches-ignore' in workflow.on.push && workflow.on.push['branches-ignore'] != null) {
+        const onBrIgn = thisPushWouldTriggerOnBranchesIgnore(workflow, context, actionInputs);
+        logWhichRefsTriggerWorkflow(onBrIgn.head, onBrIgn.trunk, 'branches-ignore', workflowPath, context, actionInputs);
+        return onBrIgn;
+    }
+    else if ('branches' in workflow.on.push && workflow.on.push.branches != null) {
+        const onBranches = thisPushWouldTriggerOnBranches(workflow, context, actionInputs);
+        logWhichRefsTriggerWorkflow(onBranches.head, onBranches.trunk, 'branches', workflowPath, context, actionInputs);
+        return onBranches;
+    }
+    else if ('tags' in workflow.on.push || 'tags-ignore' in workflow.on.push) {
+        return thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath); // both statically false
+    }
+    else {
+        return thisPushDoesntIncludeABranchOrTagFilter(workflowPath); // both statically true
+    }
+}
+/**
+ * Log for HEAD and TRUNK if this would trigger on either of them, or neither.
+ * @param headWouldTriggerThis
+ * @param trunkWouldTriggerThis
+ * @param onRefParseRule
+ * @param workflowPath
+ * @param context
+ * @param actionInputs
+ */
+function logWhichRefsTriggerWorkflow(headWouldTriggerThis, trunkWouldTriggerThis, onRefParseRule, workflowPath, context, actionInputs) {
+    if (headWouldTriggerThis) {
+        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Head (this) "${headBranch(context)}" will trigger: ${workflowPath}`);
+    }
+    if (trunkWouldTriggerThis) {
+        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Trunk "${trunkBranch(actionInputs)}" will trigger: ${workflowPath}`);
+    }
+    if (!trunkWouldTriggerThis && !headWouldTriggerThis) {
+        console.log(`${DWTBP_PREFIX} on ${onRefParseRule}: Neither trunk nor head would trigger this: ${workflowPath}`);
+    }
+}
+/**
+ * The logic for parsing the workflow.on.push.branches-ignore. Validates for the
+ * HEAD and trunk branch names.
+ * @param workflow
+ * @param context
+ * @param actionInputs
+ * @returns
+ */
+function thisPushWouldTriggerOnBranchesIgnore(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, context, actionInputs) {
+    // If branches-ignore is present, no need to check for negation.
+    const trunkWouldTriggerThis = !workflow.on.push['branches-ignore']
+        .map((branch) => minimatch(trunkBranch(actionInputs), branch))
+        .includes(true);
+    const headWouldTriggerThis = !workflow.on.push['branches-ignore']
+        .map((branch) => minimatch(headBranch(context), branch))
+        .includes(true);
+    return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
+}
+/**
+ * The logic for parsing the workflow.on.push.branches. Validates for the HEAD
+ * and trunk branch names.
+ * @param workflow
+ * @param context
+ * @param actionInputs
+ * @returns
+ */
+function thisPushWouldTriggerOnBranches(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, context, actionInputs) {
+    // Only branches is supposed to be used with the negating case. Check the
+    // trunk IS one of the patterns, but also that the triggering headBranch
+    // isn't. Branches can start with ! so we have to filter through all.
+    let trunkWouldTriggerThis = false;
+    let headWouldTriggerThis = false;
+    let positiveCheck;
+    let onBranch;
+    const onBranches = workflow.on.push.branches;
+    for (const _onBranch of onBranches) {
+        // Check each "would trigger" through all triggers in order.
+        // First check for inverse condition / sanitise branch
+        positiveCheck = _onBranch.slice(0, 1) != '!';
+        onBranch = positiveCheck ? _onBranch : _onBranch.slice(1);
+        // For both refs, test the pattern against the ref. If the ref
+        // matches the pattern, then apply the inverse of the inverse
+        // condition. Otherwise leave it as its current value.
+        trunkWouldTriggerThis = minimatch(trunkBranch(actionInputs), onBranch) ? positiveCheck : trunkWouldTriggerThis;
+        headWouldTriggerThis = minimatch(headBranch(context), onBranch) ? positiveCheck : headWouldTriggerThis;
+    }
+    return { head: headWouldTriggerThis, trunk: trunkWouldTriggerThis };
+}
+/**
+ * This just wraps logging and returning false after checking for either
+ * branches or branches-ignore. We don't handle tags.
+ * @param workflowPath
+ * @returns
+ */
+function thisPushWouldTriggerOnTagsOrTagsIgnore(workflowPath) {
+    console.log(`${DWTBP_PREFIX} on <tags|tags-ignore>: Ignoring this workflow: ${workflowPath}`);
+    return { head: false, trunk: false };
+}
+/**
+ * This just wraps logging and returning true after already exhausting checking
+ * for all four of the branches, branches-ignore, tags, and tags-ignore filters.
+ * @param workflowPath
+ * @returns
+ */
+function thisPushDoesntIncludeABranchOrTagFilter(workflowPath) {
+    console.log(`${DWTBP_PREFIX} doesn't specify branch or tag filters: Ignoring this workflow: ${workflowPath}`);
+    return { head: true, trunk: true };
+}
+/**
+ * Aggregates the result of checking both the paths and paths-ignore filters.
+ * @param workflow
+ * @param workflowPath
+ * @param context
+ * @param actionInputs
+ * @param listOfChangedFiles
+ * @returns
+ */
+// https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
+// Any required from output of yaml.parse
+// Runs in a context after already establishing workflow.on.push is non null.
+function theChangedFilesMatchThisPushesPathFilters(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, workflowPath, context, actionInputs, listOfChangedFiles) {
+    // 'paths-ignore' and 'paths' are mutually exclusive.
+    if ('paths-ignore' in workflow.on.push && workflow.on.push['paths-ignore'] != null) {
+        const res = changedFilesFilteredThisPushPathsIgnore(workflow, listOfChangedFiles);
+        console.log(`${DWTBP_PREFIX} specifies paths-ignore filters: Result was ${res} for: ${workflowPath}`);
+        return res;
+    }
+    else if ('paths' in workflow.on.push && workflow.on.push.paths != null) {
+        const res = changedFilesFilteredThisPushPaths(workflow, actionInputs, listOfChangedFiles);
+        console.log(`${DWTBP_PREFIX} specifies paths filters: Result was ${res} for: ${workflowPath}`);
+        return res;
+    }
+    else {
+        console.log(`${DWTBP_PREFIX} doesn't specify <paths|paths-ignore> filters: Ignoring this workflow: ${workflowPath}`);
+        return false;
+    }
+}
+/**
+ * True if any of the changed paths are not ignored by the paths-ignore filter.
+ * @param workflow
+ * @param listOfChangedFiles
+ * @returns
+ */
+function changedFilesFilteredThisPushPathsIgnore(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, listOfChangedFiles) {
+    // If paths-ignore is present, no need to check for negation.
+    // If any file in the list of changed files is not ignored by one of the
+    // ignore globs, then true
+    return listOfChangedFiles
+        .map((changedFile) => 
+    // each changed file maps to the rolled up result of testing it against all
+    // ignore globs, testing for a true match against any of them.
+    workflow.on.push['paths-ignore']
+        .map((pathIgnoreGlob) => minimatch(changedFile, pathIgnoreGlob))
+        .includes(true))
+        .includes(false);
+    // and finally makes sure that at least one of the changed files DIDN'T match
+}
+/**
+ * True if any of the changed paths filter through all the filtering globs.
+ * @param workflow
+ * @param actionInputs
+ * @param listOfChangedFiles
+ * @returns
+ */
+function changedFilesFilteredThisPushPaths(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+workflow, actionInputs, listOfChangedFiles) {
+    // Only paths is supposed to be used with the negating case.
+    const changedFilesPassedFilter = [];
+    for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+        changedFilesPassedFilter.push(false);
+    }
+    let positiveCheck;
+    let pathGlob;
+    for (const _pathGlob of workflow.on.push['paths']) {
+        // First check for inverse condition / sanitise path
+        positiveCheck = _pathGlob.slice(0, 1) != '!';
+        pathGlob = positiveCheck ? _pathGlob : _pathGlob.slice(1);
+        for (let i = 0; i < listOfChangedFiles.length; i += 1) {
+            if (actionInputs.vvv)
+                console.log(`--debug-- glob "${pathGlob}" matching ${listOfChangedFiles[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- before check ${changedFilesPassedFilter[i]}`);
+            if (actionInputs.vvv)
+                console.log(`--debug-- does glob match? ${minimatch(listOfChangedFiles[i], pathGlob)}`);
+            // If this changed file name matches the path glob then we update its
+            // value to whatever the positive check is, otherwise leave same.
+            changedFilesPassedFilter[i] = minimatch(listOfChangedFiles[i], pathGlob)
+                ? positiveCheck
+                : changedFilesPassedFilter[i];
+            if (actionInputs.vvv)
+                console.log(`--debug-- after check ${changedFilesPassedFilter[i]}`);
+        }
+    }
+    return changedFilesPassedFilter.includes(true);
+}
+/**
+ * Right now we only want to comment for dispatchable workflows that would
+ * trigger on pushes to the trunk but ignore those that have already been
+ * triggered by pushes to the non-trunk headref. This abstraction exists in
+ * case later on we want to handle an option to include any branch that will
+ * be triggered on the trunk regardless if they have already been triggered.
+ * @param triggersOnPushTo
+ * @returns
+ */
+function weWantToMentionThisWorkflowInTheComment(triggersOnPushTo, triggersOnPushPath) {
+    // true IFF the trunk is true AND head is false AND paths is true
+    return triggersOnPushTo.trunk ? !triggersOnPushTo.head && triggersOnPushPath : false;
+}
+////////////////////////////////////////////////////////////////////////////////
+// Components for "Part Three": Parse existing comments on the PR and do stuff.
+/* For part three; we need to parse the comments that already exist on the PR
+ * and get the comment IDs for comments that match an identifier. If some exist
+ * then these are comments we'll need to update, otherwise we will need to
+ * create a new comment. This section should include checking and getting those
+ * comment IDs (or none) to update, as well as proctor the message we actually
+ * want to write to the comments. After all there's no need to update them if
+ * they already say what they need to. But we'll have to update them according
+ * to changes to the diff patch over time, e.g. as new files are added to the PR
+ */
+/**
+ * Produces the actual body of the message we are planning to comment with.
+ * @param dispatchableWorkflowsMetadata
+ * @returns
+ */
+function messageToWriteAsComment(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+dispatchableWorkflowsMetadata) {
+    return 'TODO';
+}
+/**
+ * Checks all comments on this PR to see if they start with our "identified" or
+ * not. If they do, then ALSO check if the comments already match the content we
+ * are planning to write to them. If they match the identifier, but not the body
+ * then include those comment IDs in the returned list. Returns both lists so
+ * the function that calls this can know if comments already exist that match
+ * and don't need to be updated, so it can know not to create a new comment, if
+ * it doesn't need to update any that DO already exist.
+ * @param _commentsOnThisPR
+ * @param messageToWriteAsComment
+ * @returns
+ */
+function getListOfCommentIDsForCommentsWithThisActionsIdentifier(
+// https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+commentsOnThisPR, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+messageToWriteAsComment) {
+    return { commentIDsToUpdate: null, commentIDsAlreadyUpToDate: null };
+}
+////////////////////////////////////////////////////////////////////////////////
+// Entrypoint
+/**
  * The function run by the action.
  * @param actionInputs
  * @returns
  */
 async function entrypoint(actionInputs) {
     try {
-        logEventPayload(actionInputs);
-        // Grab the context
+        // Grab the context and log if set.
         const context = githubExports.context;
+        logEventPayload(actionInputs, context);
         // If this isn't running under a PR trigger, annotate and leave early
-        if (thisIsntAPullRequestEvent(context))
+        if (failTheActionIfThisIsntAPullRequestEvent(ACTION_NAME, context))
             return;
         // Even though that func did this already, do it again for ts intellisense
         if (!context.payload.pull_request)
             return;
-        // Otherwise, procede as usual, for a pull_request trigger.
+        // Otherwise, proceed as usual, for a pull_request trigger.
         // Prep Rest API
+        // I can't get TS to be happy with using the type for this 'ghRestAPI' on
+        // function inputs, so the uses of it are top level in here, and the results
+        // are just passed in and out of the other functions.
         const ghRestAPI = new Octokit({ auth: `Bearer ${actionInputs.github_token}` });
         // Log the owner, repo and PR#
         console.log('owner:', owner(context));
         console.log('repo:', repoName(context));
         console.log('pullRequestNumber:', pullRequestNumber(context));
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
         // STEP ONE: Get the list of files changed by this PR.
         const listOfChangedFiles = await fetchChangedFiles(context, actionInputs);
         coreExports.setOutput('list-of-changed-files', listOfChangedFiles);
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+        // STEP TWO: Get the list of dispatchable workflows that we want to mention.
         // Log the HEAD branch and the trunk branch names, used for checking against
         // the name of each branch in push trigger conditions
         console.log('HEAD branch name:', headBranch(context));
@@ -44876,7 +45268,7 @@ async function entrypoint(actionInputs) {
         // If the checkout root directory doesn't exist, set failure and exit.
         if (theCheckoutRootDirectoryDoesntExist(actionInputs))
             return;
-        // Get the list of locally checkout out workflows.
+        // Get the list of locally checked out workflows.
         const localWorkflowPaths = getFilesMatchingGithubWorkflows(actionInputs.checkout_root);
         // As well as the set of workflows known to the API.
         const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
@@ -44884,10 +45276,29 @@ async function entrypoint(actionInputs) {
             repo: repoName(context)
         });
         logGHRestAPIRateLimitHeaders(workflowsListedByAPI.headers);
-        // STEP TWO: Get the list of dispatchable workflows that we want to mention.
         const dispatchableWorkflows = await getDispatchableWorkflows(context, actionInputs, localWorkflowPaths, workflowsListedByAPI, listOfChangedFiles);
         coreExports.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows);
-        // TODO NEXT BRANCH: See the line above that also starts with "TODO NEXT BRANCH"
+        // Prepare for the next step by getting the map of workflow paths to
+        // metadata for only the paths returned from getDispatchableWorkflows
+        const dispatchableWorkflowsMetadata = mapListRepositoryWorkflows(workflowsListedByAPI, dispatchableWorkflows);
+        console.log('The dispatchable workflows this will mention', dispatchableWorkflowsMetadata);
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+        // STEP THREE: Create or update the comment that this action writes.
+        // Get all the comments on this PR.
+        const commentsOnThisPR = await ghRestAPI.issues.listComments({
+            owner: owner(context),
+            repo: repoName(context),
+            issue_number: pullRequestNumber(context)
+        });
+        const commentBody = messageToWriteAsComment(dispatchableWorkflowsMetadata);
+        // Get list of comment IDs we've already posted
+        const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody);
+        if (IDs.commentIDsToUpdate) ;
+        if (IDs.commentIDsAlreadyUpToDate) ;
+        else if (IDs.commentIDsToUpdate === null) {
+            // If there are no "comment IDs already up to date" and there weren't any
+            // that we went and updated before, then we can create a new comment.
+        }
     }
     catch (error) {
         if (error instanceof Error)
