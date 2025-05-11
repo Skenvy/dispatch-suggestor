@@ -44601,6 +44601,7 @@ async function getActionInputs() {
             log_workflow_triggers: coreExports.getInput('log-workflow-triggers') !== 'false',
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
             vvv: coreExports.getInput('vvv') !== 'false',
+            debug_integration_test_only_use_injected_paths: coreExports.getInput('debug-integration-test-only-use-injected-paths') !== 'false',
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -44789,7 +44790,13 @@ async function fetchChangedFiles(context, actionInputs) {
             }
         });
         try {
-            actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+            if (actionInputs.debug_integration_test_only_use_injected_paths) {
+                coreExports.warning('A "debug integration test" input, has been used!');
+                coreExports.warning('Ignoring "Actual files", only using the injected file names.');
+            }
+            else {
+                actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path);
+            }
             injectedFiles = actionInputs.inject_diff_paths.split(',');
             const rateLimitInfo = result.rateLimit;
             console.log('Changed files (actual):', actualFiles);
