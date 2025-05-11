@@ -279,6 +279,8 @@ async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): 
     })
     try {
       if (actionInputs.debug_integration_test_only_use_injected_paths) {
+        console.log('A "debug integration test" input, has been used!')
+        console.log('Ignoring "Actual files", only using the injected file names.')
         core.warning('A "debug integration test" input, has been used!')
         core.warning('Ignoring "Actual files", only using the injected file names.')
       } else {

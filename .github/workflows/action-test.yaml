@@ -41,6 +41,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
             .github/workflows/uut-on-push-branches.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         # (non-default checkout-root internal)
         - job-name: INTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -53,6 +54,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
             .github/workflows/uut-on-push-branches.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         # (non-default checkout-root external)
         - job-name: EXTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -65,6 +67,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
             .github/workflows/uut-on-push-branches.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         # (default checkout root, but a different trunk name)
         - job-name: BRANCHES IGNORE
           trunk-branch: _some_other_fake_trunk_name
@@ -75,6 +78,7 @@ jobs:
           expected-dispatchable-workflows: >-
             '[.github/workflows/uut-on-push-branches-ignore.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         # Now test the paths summon their respective workflows independently
         - job-name: PATHS ABC
           trunk-branch: fake_trunk
@@ -87,6 +91,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-def.yml,
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         - job-name: PATHS XYZ
           trunk-branch: fake_trunk
           checkout-root: '.'
@@ -98,6 +103,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
             .github/workflows/uut-on-push-branches-paths-xyz.yml]'
           vvv: false
+          debug-integration-test-only-use-injected-paths: false
         # Test the ignore paths options (empty expects until the wf's they test are in main)
         - job-name: PATHS IGNORE DEF
           trunk-branch: fake_trunk
@@ -144,6 +150,7 @@ jobs:
         log-workflow-triggers: ${{ matrix.log-workflow-triggers }}
         inject-diff-paths: ${{ matrix.inject-diff-paths }}
         vvv: ${{ matrix.vvv }}
+        debug-integration-test-only-use-injected-paths: ${{ matrix.debug-integration-test-only-use-injected-paths }}
     - name: Log -- List changed files
       run: echo "${{ steps.test-default.outputs.list-of-changed-files }}"
     - name: Log -- List dispatchable workflows
@@ -151,6 +158,6 @@ jobs:
     - name: Eval -- dispatchable workflows are what were expected?
       run: >-
         [[ "${{ steps.test-default.outputs.list-of-dispatchable-workflows }}"
-        == "${{ matrix.expected-dispatchable-workflows }}" ]]
+        == $(echo "${{ matrix.expected-dispatchable-workflows }}" | sed 's/ //g') ]]
         && echo "Dispatchable workflows match expected"
         || (echo "Dispatchable workflows mismatch" && exit 1)
