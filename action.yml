@@ -44,8 +44,8 @@ inputs:
     description: 'Very very verbose. Include debugging logs.'
     required: false
     default: 'false'
-  # "debug-integration-test" inputs only expected to be used during testing!
-  debug-integration-test-only-use-injected-paths:
+  # debug-integration-test (DIT) inputs only expected to be used during testing!
+  DIT-only-use-injected-paths:
     description: >-
       'to be able to test the "paths-ignore" input, we need some test cases to
       ignore the actual diff and only run on the paths in "inject-diff-paths"'
