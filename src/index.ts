@@ -28,6 +28,7 @@ export type ActionInputs = {
   log_workflow_triggers: boolean
   inject_diff_paths: string
   vvv: boolean
+  debug_integration_test_only_use_injected_paths: boolean
 }
 
 /**
@@ -43,6 +44,8 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
       log_workflow_triggers: core.getInput('log-workflow-triggers') !== 'false',
       inject_diff_paths: core.getInput('inject-diff-paths'),
       vvv: core.getInput('vvv') !== 'false',
+      debug_integration_test_only_use_injected_paths:
+        core.getInput('debug-integration-test-only-use-injected-paths') !== 'false',
       github_token: core.getInput('github_token')
     }
   } catch (error) {
@@ -275,7 +278,12 @@ async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): 
       }
     })
     try {
-      actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path)
+      if (actionInputs.debug_integration_test_only_use_injected_paths) {
+        core.warning('A "debug integration test" input, has been used!')
+        core.warning('Ignoring "Actual files", only using the injected file names.')
+      } else {
+        actualFiles = result.repository.pullRequest.files.edges.map((edge) => edge.node.path)
+      }
       injectedFiles = actionInputs.inject_diff_paths.split(',')
       const rateLimitInfo = result.rateLimit
       console.log('Changed files (actual):', actualFiles)
