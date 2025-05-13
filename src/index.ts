@@ -965,7 +965,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
       workflowsListedByAPI,
       listOfChangedFiles
     )
-    core.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows)
+    core.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()))
 
     // Prepare for the next step by getting the map of workflow paths to
     // metadata for only the paths returned from getDispatchableWorkflows
