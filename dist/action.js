@@ -45305,6 +45305,12 @@ function messageToWriteAsComment(context, actionInputs, dispatchableWorkflowsMet
 `;
         }
     });
+    if (messageBody === '') {
+        messageBody = `
+> [!NOTE]
+> Oh, it looks like there aren't any dispatchable workflows to suggest yet! Don't worry, this comment will auto-update when it runs again. This just means no \`workflow_dispatch\` triggered workflows were relevant to the files in this PR, or they were already triggered by a push from this PR's branch.
+`;
+    }
     return `${commentUniqueIdentifer}${messageHead}${messageBody}`;
 }
 /**
