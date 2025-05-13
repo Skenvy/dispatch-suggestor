@@ -3,6 +3,7 @@
 # For example. Once indented, make sure to add the extra space (total 3 spaces) indenting
 # that the `*` lists are under the number lists, because pasting the response in here
 # removes one of the spaces.
+
 - comment-unique-identifier: 'ACTION-TEST-DEFAULTISH'
   expected_body: |
     <!-- dispatch-suggestor :: https://github.com/Skenvy/dispatch-suggestor :: Unique Comment Identifier :: ACTION-TEST-DEFAULTISH -->
