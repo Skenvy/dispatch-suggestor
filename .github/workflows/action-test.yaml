@@ -172,6 +172,12 @@ jobs:
         sparse-checkout-cone-mode: false
     - name: List the local workflows
       run: ls -liath .github/workflows/
+    # Remove the ignore path test workflows for the empty set test case
+    - name: Special step to enable empty test case
+      if: matrix.job-name == 'EMPTY SET OF DISPATCHABLES'
+      run: >-
+        rm .github/workflows/uut-on-push-branches-paths-ignore-def.yml
+        .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml
     # Test the action by calling it with multiple inputs.
     - name: Use the action
       uses: ./
