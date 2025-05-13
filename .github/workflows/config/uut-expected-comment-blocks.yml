@@ -255,7 +255,7 @@
        * _This workflow has "required" inputs, so this action refrains from suggesting the `gh` cli._
 - comment-unique-identifier: 'ACTION-TEST-EMPTY_SET_OF_DISPATCHABLES'
   expected_body: |
-    <!-- dispatch-suggestor :: https://github.com/Skenvy/dispatch-suggestor :: Unique Comment Identifier :: ACTION-TEST-INPUTS_REQUIRED_OR_NOT -->
+    <!-- dispatch-suggestor :: https://github.com/Skenvy/dispatch-suggestor :: Unique Comment Identifier :: ACTION-TEST-EMPTY_SET_OF_DISPATCHABLES -->
     > [!TIP]
     > ## [**dispatch-suggestor**](https://github.com/Skenvy/dispatch-suggestor)
     > Found the following dispatchable workflows to suggest. See this action's [run logs](https://github.com/Skenvy/dispatch-suggestor/actions/runs/{{ github.run_id }}) for _why_.
