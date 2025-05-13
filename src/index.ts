@@ -26,6 +26,7 @@ export type ActionInputs = {
   checkout_root: string
   log_event_payload: boolean
   log_workflow_triggers: boolean
+  comment_unique_identifier: string
   inject_diff_paths: string
   vvv: boolean
   // debug-integration-tests- (DIT-)
@@ -43,6 +44,7 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
       checkout_root: core.getInput('checkout-root'),
       log_event_payload: core.getInput('log-event-payload') !== 'false',
       log_workflow_triggers: core.getInput('log-workflow-triggers') !== 'false',
+      comment_unique_identifier: core.getInput('comment-unique-identifier'),
       inject_diff_paths: core.getInput('inject-diff-paths'),
       vvv: core.getInput('vvv') !== 'false',
       DIT_only_use_injected_paths: core.getInput('DIT-only-use-injected-paths') !== 'false',
@@ -121,6 +123,15 @@ function headBranch(context: Context): string {
 }
 
 /**
+ * The url to the specific run that this is invoked inside of. Useful for self
+ * linking to the logs of the run.
+ * @param context
+ * @returns
+ */
+function runUrl(context: Context): string {
+  return `https://github.com/${owner(context)}/${repoName(context)}/actions/runs/${context.runId}`
+}
+/**
  * Log+Notice the rate limit from the response headers for the GitHub REST API.
  * @param responseHeaders
  */
@@ -144,7 +155,7 @@ function logGHRestAPIRateLimitHeaders(responseHeaders: ResponseHeaders) {
 function mapListRepositoryWorkflows(
   // https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
   workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'],
-  onlyIncludeThesePaths: string[] | null
+  onlyIncludeThesePaths: Map<string, boolean> | null
 ): Map<string, components['schemas']['workflow']> {
   let mappedWfs: { path: string; metadata: components['schemas']['workflow'] }[] =
     workflowsListedByAPI.data.workflows.map((workflow) => ({
@@ -152,7 +163,9 @@ function mapListRepositoryWorkflows(
       metadata: workflow
     }))
   if (onlyIncludeThesePaths) {
-    mappedWfs = mappedWfs.filter((wf) => onlyIncludeThesePaths.includes(wf.path))
+    const pathsToInclude = Array.from(onlyIncludeThesePaths.keys())
+    // Filter "all" API workflows to only those we found had paths we care about
+    mappedWfs = mappedWfs.filter((wf) => pathsToInclude.includes(wf.path))
   }
   return new Map(mappedWfs.map((wf) => [wf.path, wf.metadata]))
 }
@@ -328,6 +341,9 @@ const DWTBP_PREFIX = 'Dispatchable workflow triggered by push:'
  * This checks both the locally checkout out workflows and the result of the API
  * for listing workflows, to compile the set of dispatchable workflows, and will
  * return the set of those that we want to mention in the comment.
+ *
+ * The mapped to boolean indicates whether the workflow has "required" inputs or
+ * not.
  * @param context
  * @param actionInputs
  * @returns
@@ -339,7 +355,7 @@ async function getDispatchableWorkflows(
   // https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
   workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'],
   listOfChangedFiles: string[]
-): Promise<string[]> {
+): Promise<Map<string, boolean>> {
   try {
     // Remap the API's response
     const workflowsAPI = mapListRepositoryWorkflows(workflowsListedByAPI, null)
@@ -352,9 +368,8 @@ async function getDispatchableWorkflows(
     // paths that matches the workflow regex with the list of workflow paths
     // returned by the API. But we need to glue them back to the whole path
     // for finding and reading the yaml.
-    const dispatchableWorkflowsThatRequireInputs: string[] = []
+    const dispatchableWorkflowsThatHaveRequiredInputs: string[] = []
     const dispatchableWorkflowsTriggeredByPush: string[] = []
-    const dispatchableWorkflowsTriggeredByPushThatDontRequireInputs: string[] = []
     // Iterate over the list of workflows and parse the workflow_dispatch ones.
     for (const workflowPath of workflowsFound) {
       const workflowContent = fs.readFileSync(path.join(localWorkflowPaths.directory, workflowPath), 'utf8')
@@ -383,10 +398,18 @@ async function getDispatchableWorkflows(
           'inputs' in workflow.on.workflow_dispatch &&
           workflow.on.workflow_dispatch.inputs != null
         ) {
-          // Could test whether each input has <input_id>.required or not!
-          // At the moment just consider any input listed as too much.
-          dispatchableWorkflowsThatRequireInputs.push(workflowPath)
-          console.log(`Dispatchable workflow that takes inputs: ${workflowPath}`)
+          // Test whether each input has <input_id>.required or not!
+          for (const input in workflow.on.workflow_dispatch.inputs) {
+            if (
+              'required' in workflow.on.workflow_dispatch.inputs[input] &&
+              workflow.on.workflow_dispatch.inputs[input].required === true
+            ) {
+              dispatchableWorkflowsThatHaveRequiredInputs.push(workflowPath)
+              console.log(`Dispatchable workflow that takes 'required' inputs: ${workflowPath}`)
+              break
+            }
+          }
+          // If it finished without finding a required input then don't warn.
         }
         // Check and gather all dispatchables that are triggered on push
         if ('push' in workflow.on) {
@@ -412,19 +435,21 @@ async function getDispatchableWorkflows(
     }
     // Finally, complete the list to return by checking against workflows with
     // required inputs that we need to disclude.
+    const dispatchableWorkflowMap = new Map<string, boolean>()
     for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-      if (dwtbp in dispatchableWorkflowsThatRequireInputs) {
+      if (dwtbp in dispatchableWorkflowsThatHaveRequiredInputs) {
         console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`)
+        dispatchableWorkflowMap.set(dwtbp, true)
       } else {
         if (actionInputs.vvv) console.log(`--debug-- pushing wf to trigger-by-push-final-list ${dwtbp}`)
-        dispatchableWorkflowsTriggeredByPushThatDontRequireInputs.push(dwtbp)
+        dispatchableWorkflowMap.set(dwtbp, false)
       }
     }
-    return dispatchableWorkflowsTriggeredByPushThatDontRequireInputs
+    return dispatchableWorkflowMap
   } catch (error) {
     console.error('Error fetching workflows:', error)
     core.setFailed(`Error fetching workflows: ${error}`)
-    return []
+    return new Map<string, boolean>()
   }
 }
 
@@ -737,6 +762,56 @@ function weWantToMentionThisWorkflowInTheComment(
 ////////////////////////////////////////////////////////////////////////////////
 // Components for "Part Three": Parse existing comments on the PR and do stuff.
 
+/**
+ * Name of the action / project
+ */
+const PROJECT_NAME = 'dispatch-suggestor'
+
+/**
+ * Link to the project's repo
+ */
+const PROJECT_URL = 'https://github.com/Skenvy/dispatch-suggestor'
+
+/**
+ * Use in msg header
+ */
+const PROJECT_NEW_BUG_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=bug&template=bug-report.yaml'
+
+/**
+ * Use in msg Header
+ */
+const PROJECT_NEW_FEATURE_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=enhancement&template=feature-request.yaml'
+
+/**
+ * Use in msg Header
+ */
+const PROJECT_SECURITY_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=security&template=security-vulnerability.yaml'
+
+/**
+ * A prefix to remove from paths to access only the filename that's used in urls
+ */
+const WORKFLOW_PATH_PREFIX = '.github/workflows/'
+
+/**
+ * Link to docs on how to trigger dispatches, because it's always handy to have
+ * docs linked to from an instruction telling you to go do something.
+ */
+const DISPATCH_DOCS_URL =
+  'https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow'
+
+/**
+ * Format the HTML tag we are going to include in our comments and later check
+ * to verify if we've already commented or not.
+ * @param actionInputs
+ * @returns
+ */
+function commentUniqueIdentiferHtmlTag(actionInputs: ActionInputs): string {
+  return `<!-- ${PROJECT_NAME} :: ${PROJECT_URL} :: Unique Comment Identifier :: ${actionInputs.comment_unique_identifier} -->`
+}
+
 /* For part three; we need to parse the comments that already exist on the PR
  * and get the comment IDs for comments that match an identifier. If some exist
  * then these are comments we'll need to update, otherwise we will need to
@@ -749,14 +824,55 @@ function weWantToMentionThisWorkflowInTheComment(
 
 /**
  * Produces the actual body of the message we are planning to comment with.
+ * @param context
+ * @param actionInputs
  * @param dispatchableWorkflowsMetadata
+ * @param dispatchableWorkflows
  * @returns
  */
 function messageToWriteAsComment(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dispatchableWorkflowsMetadata: Map<string, components['schemas']['workflow']>
+  context: Context,
+  actionInputs: ActionInputs,
+  dispatchableWorkflowsMetadata: Map<string, components['schemas']['workflow']>,
+  dispatchableWorkflows: Map<string, boolean>
 ): string {
-  return 'TODO'
+  const commentUniqueIdentifer = commentUniqueIdentiferHtmlTag(actionInputs)
+  // Because messageHead puts its content in a quote block `>` whether on the
+  // end of itself, or in combination with the final string concat, it needs
+  // TWO \n between the last line with `>` and the subsequent non empty line.
+  const messageHead = `
+> [!TIP]
+> ## [**${PROJECT_NAME}**](${PROJECT_URL})
+> Found the following dispatchable workflows to suggest. See this action's [run logs](${runUrl(context)}) for _why_.
+> To trigger a dispatchable workflow, see that workflow's "run history" [and follow these docs](${DISPATCH_DOCS_URL}).
+> _See a bug?_ [Let me know](${PROJECT_NEW_BUG_URL}). Have a feature request? [Hit me up](${PROJECT_NEW_FEATURE_URL}). Security issue? [Submit it here](${PROJECT_SECURITY_URL}).
+`
+  let messageBody = ''
+  const ownerRepo = `${owner(context)}/${repoName(context)}`
+  dispatchableWorkflowsMetadata.forEach((value, key) => {
+    const workflowFilename = value.path.slice(WORKFLOW_PATH_PREFIX.length)
+    const workflowActionsUrl = `https://github.com/${ownerRepo}/actions/workflows/${workflowFilename}`
+    const workflowHyperlink = `[**${value.name}**](${value.html_url})`
+    const runHistoryHyperlink = `[run history](${workflowActionsUrl})`
+    const badge = `[![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`
+    messageBody += `
+1. ${workflowHyperlink}: see ${runHistoryHyperlink}.
+   * Last dispatched run's status on this branch
+   * ${badge}`
+    if (dispatchableWorkflows.get(key)) {
+      messageBody += `
+   * _This workflow has "required" inputs, so this action refrains from suggesting the \`gh\` cli._
+`
+    } else {
+      messageBody += `
+   * Or copy the [\`gh api\` cli](https://cli.github.com/manual/gh_api) invocation:
+   * \`\`\`
+     gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"
+     \`\`\`
+`
+    }
+  })
+  return `${commentUniqueIdentifer}${messageHead}${messageBody}`
 }
 
 /**
@@ -769,16 +885,38 @@ function messageToWriteAsComment(
  * it doesn't need to update any that DO already exist.
  * @param _commentsOnThisPR
  * @param messageToWriteAsComment
+ * @param actionInputs
  * @returns
  */
 function getListOfCommentIDsForCommentsWithThisActionsIdentifier(
   // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   commentsOnThisPR: Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}/comments']['response'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  messageToWriteAsComment: string
-): { commentIDsToUpdate: string[] | null; commentIDsAlreadyUpToDate: string[] | null } {
-  return { commentIDsToUpdate: null, commentIDsAlreadyUpToDate: null }
+  messageToWriteAsComment: string,
+  actionInputs: ActionInputs
+): { commentIDsToUpdate: number[] | null; commentIDsAlreadyUpToDate: number[] | null } {
+  const commentIDsToUpdate = []
+  const commentIDsAlreadyUpToDate = []
+  const commentUniqueIdentifer = commentUniqueIdentiferHtmlTag(actionInputs)
+  for (const comment of commentsOnThisPR.data) {
+    if (
+      comment.user &&
+      comment.user.login === 'github-actions[bot]' &&
+      comment.body &&
+      comment.body.includes(commentUniqueIdentifer)
+    ) {
+      if (comment.body === messageToWriteAsComment) {
+        commentIDsAlreadyUpToDate.push(comment.id)
+      } else {
+        commentIDsToUpdate.push(comment.id)
+      }
+    }
+  }
+  console.log(`Comment-writer: IDs to Update: ${commentIDsToUpdate}`)
+  console.log(`Comment-writer: IDs Already up to date: ${commentIDsAlreadyUpToDate}`)
+  return {
+    commentIDsToUpdate: commentIDsToUpdate.length > 0 ? commentIDsToUpdate : null,
+    commentIDsAlreadyUpToDate: commentIDsAlreadyUpToDate.length > 0 ? commentIDsAlreadyUpToDate : null
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -846,7 +984,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
       workflowsListedByAPI,
       listOfChangedFiles
     )
-    core.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows)
+    core.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()))
 
     // Prepare for the next step by getting the map of workflow paths to
     // metadata for only the paths returned from getDispatchableWorkflows
@@ -861,18 +999,57 @@ export async function entrypoint(actionInputs: ActionInputs) {
       repo: repoName(context),
       issue_number: pullRequestNumber(context)
     })
-    const commentBody = messageToWriteAsComment(dispatchableWorkflowsMetadata)
+    const commentBody = messageToWriteAsComment(
+      context,
+      actionInputs,
+      dispatchableWorkflowsMetadata,
+      dispatchableWorkflows
+    )
     // Get list of comment IDs we've already posted
-    const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody)
+    const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody, actionInputs)
+    // Now knowing IDs we need to update or that are already up to date, and the
+    // message we want to write on those comments, pick the right thing to do.
+    // Note: "deleting" comments is something that could be added in the future
     if (IDs.commentIDsToUpdate) {
       // Unambiguously UPDATE these comments
+      // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#update-an-issue-comment
+      for (const idToUpdate of IDs.commentIDsToUpdate) {
+        console.log(`Comment-writer: UPDATING comment: ${idToUpdate}`)
+        await ghRestAPI.issues.updateComment({
+          owner: owner(context),
+          repo: repoName(context),
+          comment_id: idToUpdate,
+          body: commentBody,
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      }
     }
     if (IDs.commentIDsAlreadyUpToDate) {
       // If these exist, then we don't need to create any new comments.
       // Log that these exist and are already up to date and then close.
+      for (const idAlreadyUpToDate of IDs.commentIDsAlreadyUpToDate) {
+        console.log(`Comment-writer: Comments were ALREADY up to date: ${idAlreadyUpToDate}`)
+      }
     } else if (IDs.commentIDsToUpdate === null) {
       // If there are no "comment IDs already up to date" and there weren't any
       // that we went and updated before, then we can create a new comment.
+      // https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
+      const newComment = await ghRestAPI.issues.createComment({
+        owner: owner(context),
+        repo: repoName(context),
+        issue_number: pullRequestNumber(context),
+        body: commentBody,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+      if (newComment.status === 201) {
+        console.log(`Comment-writer: Writing NEW comment success: ${newComment.data.id}`)
+      } else {
+        console.log(`Comment-writer: Writing NEW comment failed: ${newComment.status}`)
+      }
     }
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)

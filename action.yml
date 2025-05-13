@@ -11,7 +11,7 @@ inputs:
   github_token:
     description: >-
       'Requires `permissions: { actions: read,
-      contents: read, pull-requests: read }`'
+      contents: read, pull-requests: write }`'
     required: true
   # Regularly expected inputs
   trunk-branch:
@@ -35,6 +35,13 @@ inputs:
     required: false
     default: 'false'
   # Less commonly expected inputs
+  comment-unique-identifier:
+    description: >-
+      'A hidden string the action can use to identify any previously written
+      comment, to edit it rather than add indefinitely. Only useful if you're
+      using this action with multiple configurations on the same PR.'
+    required: false
+    default: 'DEFAULT_COMMENT_UNIQUE_IDENTIFIER'
   inject-diff-paths:
     description: >-
       'A comma-separated list of paths to inject into the list of changed files'
