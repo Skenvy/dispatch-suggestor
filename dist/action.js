@@ -45203,6 +45203,11 @@ const PROJECT_URL = 'https://github.com/Skenvy/dispatch-suggestor';
  */
 const WORKFLOW_PATH_PREFIX = '.github/workflows/';
 /**
+ * Link to docs on how to trigger dispatches, because it's always handy to have
+ * docs linked to from an instruction telling you to go do something.
+ */
+const DISPATCH_DOCS_URL = 'https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow';
+/**
  * Format the HTML tag we are going to include in our comments and later check
  * to verify if we've already commented or not.
  * @param actionInputs
@@ -45235,20 +45240,19 @@ function messageToWriteAsComment(context, actionInputs, dispatchableWorkflowsMet
     const messageHead = `> [!TIP]\n> [**${PROJECT_NAME}**](${PROJECT_URL}) found the following dispatchable workflows to suggest:\n`;
     let messageBody = '';
     const ownerRepo = `${owner(context)}/${repoName(context)}`;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const cliSuggestionLine = 'Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:';
-    dispatchableWorkflowsMetadata.forEach((value, _key) => {
+    dispatchableWorkflowsMetadata.forEach((value) => {
         const workflowFilename = value.path.slice(WORKFLOW_PATH_PREFIX.length);
         const workflowActionsUrl = `https://github.com/${ownerRepo}/actions/workflows/${workflowFilename}`;
         const workflowHyperlink = `[**${value.name}**](${value.html_url})`;
         const runHistoryHyperlink = `[run history](${workflowActionsUrl})`;
         const badge = ` [![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`;
-        messageBody += `1. ${workflowHyperlink}: see ${runHistoryHyperlink}. (Go to run history to trigger from browser).
-       * Last dispatched run's status on this branch ${badge}
-       * ${cliSuggestionLine}
-       * \`\`\`
-         gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"
-       * \`\`\`\n`;
+        messageBody += `
+1. ${workflowHyperlink}: see ${runHistoryHyperlink}. Go to run history to [trigger a dispatch _from the browser_](${DISPATCH_DOCS_URL}).
+   * Last dispatched run's status on this branch ${badge}
+   * Or copy the [\`gh api\` cli](https://cli.github.com/manual/gh_api) invocation:
+   * \`\`\`
+     gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"
+   * \`\`\``;
     });
     return `${commentUniqueIdentifer}\n${messageHead}\n${messageBody}`;
 }
