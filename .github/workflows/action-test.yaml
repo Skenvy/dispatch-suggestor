@@ -171,5 +171,22 @@ jobs:
         | sed 's/ //g')" ]]
         && echo "Dispatchable workflows match expected"
         || (echo "Dispatchable workflows mismatch" && exit 1)
-    # Add the comment message body as an output of the action, and add a step
-    # here to check each invocation left behind the expected comment.
+    # To eval the messages in the comment bodies, we need to disable star globs
+    # (e.g. `set -f`). We also need to pipe the gh api jq output to `tr -d '\r'`
+    # to remove the carriage returns that comments made on it seem to have.
+    - name: Eval -- comment left by action is as-expected
+      run: |-
+        set -f
+        # Get comment left by API
+        contentsOfCommentFromApiFoundByUniqueIdentifier=\
+        "$(gh api /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/issues/${{ github.event.number }}/comments \
+        --jq '.[] | select(.body | contains("${{ matrix.comment-unique-identifier }}")) | .body' | tr -d '\r')"
+        # Read the expected comment in the config
+        expectedContentsOfCommentFromConfigFile=\
+        "$(yq -r '.[] | select(.["comment-unique-identifier"] == "${{ matrix.comment-unique-identifier }}") | .expected_body' \
+        .github/workflows/config/uut-expected-comment-blocks.yml)"
+        # Compare them.
+        [[ "$contentsOfCommentFromApiFoundByUniqueIdentifier" \
+        == "$expectedContentsOfCommentFromConfigFile" ]] \
+        && echo "Comment left was as expected" \
+        || (echo "Comment mismatch!" && exit 1)

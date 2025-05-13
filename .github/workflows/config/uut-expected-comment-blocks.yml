@@ -1,0 +1,16 @@
+- comment-unique-identifier: ACTION-TEST-PATHS_IGNORE_GHI
+  expected_body: |
+    <!-- dispatch-suggestor :: https://github.com/Skenvy/dispatch-suggestor :: Unique Comment Identifier :: ACTION-TEST-PATHS_IGNORE_GHI -->
+    > [!TIP]
+    > ## [**dispatch-suggestor**](https://github.com/Skenvy/dispatch-suggestor)
+    > Found the following dispatchable workflows to suggest. See this action's [run logs](https://github.com/Skenvy/dispatch-suggestor/actions/runs/14995709364) for _why_.
+    > To trigger a dispatchable workflow, see that workflow's "run history" [and follow these docs](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow).
+    
+    1. [**UUT::on.push::paths-ignore::def**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-branches-paths-ignore-def.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::paths-ignore::def](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/badge.svg?branch=comment&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/dispatches -f "ref=comment"
+         ```
+
