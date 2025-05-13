@@ -773,6 +773,24 @@ const PROJECT_NAME = 'dispatch-suggestor'
 const PROJECT_URL = 'https://github.com/Skenvy/dispatch-suggestor'
 
 /**
+ * Use in msg header
+ */
+const PROJECT_NEW_BUG_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=bug&template=bug-report.yaml'
+
+/**
+ * Use in msg Header
+ */
+const PROJECT_NEW_FEATURE_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=enhancement&template=feature-request.yaml'
+
+/**
+ * Use in msg Header
+ */
+const PROJECT_SECURITY_URL =
+  'https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=security&template=security-vulnerability.yaml'
+
+/**
  * A prefix to remove from paths to access only the filename that's used in urls
  */
 const WORKFLOW_PATH_PREFIX = '.github/workflows/'
@@ -827,6 +845,7 @@ function messageToWriteAsComment(
 > ## [**${PROJECT_NAME}**](${PROJECT_URL})
 > Found the following dispatchable workflows to suggest. See this action's [run logs](${runUrl(context)}) for _why_.
 > To trigger a dispatchable workflow, see that workflow's "run history" [and follow these docs](${DISPATCH_DOCS_URL}).
+> _See a bug?_ [Let me know](${PROJECT_NEW_BUG_URL}). Have a feature request? [Hit me up](${PROJECT_NEW_FEATURE_URL}). Security issue? [Submit it here](${PROJECT_SECURITY_URL}).
 `
   let messageBody = ''
   const ownerRepo = `${owner(context)}/${repoName(context)}`
