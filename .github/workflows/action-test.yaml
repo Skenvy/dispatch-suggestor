@@ -141,7 +141,9 @@ jobs:
           comment-unique-identifier: 'ACTION-TEST-INPUTS_REQUIRED_OR_NOT'
           inject-diff-paths: '_test/jkl/some/fake/file/path'
           expected-dispatchable-workflows: >-
-            [.github/workflows/uut-on-push-inputs-all-required.yml,
+            [.github/workflows/uut-on-push-branches-paths-ignore-def.yml,
+            .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml,
+            .github/workflows/uut-on-push-inputs-all-required.yml,
             .github/workflows/uut-on-push-inputs-none-required.yml,
             .github/workflows/uut-on-push-inputs-some-required.yml]
           vvv: false

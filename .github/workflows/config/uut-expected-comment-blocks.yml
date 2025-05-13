@@ -213,4 +213,49 @@
          ```
 - comment-unique-identifier: 'ACTION-TEST-INPUTS_REQUIRED_OR_NOT'
   expected_body: |
-    eh
+    <!-- dispatch-suggestor :: https://github.com/Skenvy/dispatch-suggestor :: Unique Comment Identifier :: ACTION-TEST-INPUTS_REQUIRED_OR_NOT -->
+    > [!TIP]
+    > ## [**dispatch-suggestor**](https://github.com/Skenvy/dispatch-suggestor)
+    > Found the following dispatchable workflows to suggest. See this action's [run logs](https://github.com/Skenvy/dispatch-suggestor/actions/runs/{{ github.run_id }}) for _why_.
+    > To trigger a dispatchable workflow, see that workflow's "run history" [and follow these docs](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow).
+    > _See a bug?_ [Let me know](https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=bug&template=bug-report.yaml). Have a feature request? [Hit me up](https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=enhancement&template=feature-request.yaml). Security issue? [Submit it here](https://github.com/Skenvy/dispatch-suggestor/issues/new?assignees=&labels=security&template=security-vulnerability.yaml).
+
+    1. [**UUT::on.push::paths-ignore::def**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-branches-paths-ignore-def.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::paths-ignore::def](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
+         ```
+
+    1. [**UUT::on.push::paths-ignore::ghi**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-branches-paths-ignore-ghi.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-ghi.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::paths-ignore::ghi](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-ghi.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-ghi.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-ghi.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
+         ```
+
+    1. [**UUT::on.push::inputs::all-required**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-inputs-all-required.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::inputs::all-required](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
+         ```
+
+    1. [**UUT::on.push::inputs::none-required**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-inputs-none-required.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-none-required.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::inputs::none-required](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-none-required.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-none-required.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-none-required.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
+         ```
+
+    1. [**UUT::on.push::inputs::some-required**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-inputs-some-required.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml).
+       * Last dispatched run's status on this branch
+       * [![UUT::on.push::inputs::some-required](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml)
+       * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
+       * ```
+         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
+         ```
