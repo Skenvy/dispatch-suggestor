@@ -43,6 +43,7 @@ jobs:
             .github/workflows/uut-on-push-branches.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         # (non-default checkout-root internal)
         - job-name: INTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -57,6 +58,7 @@ jobs:
             .github/workflows/uut-on-push-branches.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         # (non-default checkout-root external)
         - job-name: EXTERNAL CHECKOUT ROOT
           trunk-branch: fake_trunk
@@ -71,6 +73,7 @@ jobs:
             .github/workflows/uut-on-push-branches.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         # (default checkout root, but a different trunk name)
         - job-name: BRANCHES IGNORE
           trunk-branch: _some_other_fake_trunk_name
@@ -83,6 +86,7 @@ jobs:
             [.github/workflows/uut-on-push-branches-ignore.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         # Now test the paths summon their respective workflows independently
         - job-name: PATHS ABC
           trunk-branch: fake_trunk
@@ -97,6 +101,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         - job-name: PATHS XYZ
           trunk-branch: fake_trunk
           checkout-root: '.'
@@ -110,6 +115,7 @@ jobs:
             .github/workflows/uut-on-push-branches-paths-xyz.yml]
           vvv: false
           DIT-only-use-injected-paths: false
+          DIT-ignore-list-of-dispatchable-workflows: false
         # Test the ignore paths options.
         - job-name: PATHS IGNORE DEF
           trunk-branch: fake_trunk
@@ -122,6 +128,7 @@ jobs:
             [.github/workflows/uut-on-push-branches-paths-ignore-ghi.yml]
           vvv: false
           DIT-only-use-injected-paths: true
+          DIT-ignore-list-of-dispatchable-workflows: false
         - job-name: PATHS IGNORE GHI
           trunk-branch: fake_trunk
           checkout-root: '.'
@@ -133,6 +140,7 @@ jobs:
             [.github/workflows/uut-on-push-branches-paths-ignore-def.yml]
           vvv: false
           DIT-only-use-injected-paths: true
+          DIT-ignore-list-of-dispatchable-workflows: false
         - job-name: INPUTS REQUIRED OR NOT
           trunk-branch: fake_trunk
           checkout-root: '.'
@@ -148,6 +156,7 @@ jobs:
             .github/workflows/uut-on-push-inputs-some-required.yml]
           vvv: false
           DIT-only-use-injected-paths: true
+          DIT-ignore-list-of-dispatchable-workflows: false
         - job-name: EMPTY SET OF DISPATCHABLES
           trunk-branch: fake_trunk
           checkout-root: '.'
@@ -158,6 +167,7 @@ jobs:
           expected-dispatchable-workflows: '[]'
           vvv: false
           DIT-only-use-injected-paths: true
+          DIT-ignore-list-of-dispatchable-workflows: true
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -172,12 +182,6 @@ jobs:
         sparse-checkout-cone-mode: false
     - name: List the local workflows
       run: ls -liath .github/workflows/
-    # Remove the ignore path test workflows for the empty set test case
-    - name: Special step to enable empty test case
-      if: matrix.job-name == 'EMPTY SET OF DISPATCHABLES'
-      run: >-
-        rm .github/workflows/uut-on-push-branches-paths-ignore-def.yml
-        .github/workflows/uut-on-push-branches-paths-ignore-ghi.yml
     # Test the action by calling it with multiple inputs.
     - name: Use the action
       uses: ./
@@ -192,6 +196,7 @@ jobs:
         inject-diff-paths: ${{ matrix.inject-diff-paths }}
         vvv: ${{ matrix.vvv }}
         DIT-only-use-injected-paths: ${{ matrix.DIT-only-use-injected-paths }}
+        DIT-ignore-list-of-dispatchable-workflows: ${{ matrix.DIT-ignore-list-of-dispatchable-workflows }}
     - name: Log -- List changed files
       run: echo "${{ steps.test-step.outputs.list-of-changed-files }}"
     - name: Log -- List dispatchable workflows
