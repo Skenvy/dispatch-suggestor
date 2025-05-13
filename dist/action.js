@@ -44604,6 +44604,7 @@ async function getActionInputs() {
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
             vvv: coreExports.getInput('vvv') !== 'false',
             DIT_only_use_injected_paths: coreExports.getInput('DIT-only-use-injected-paths') !== 'false',
+            DIT_ignore_list_of_dispatchable_workflows: coreExports.getInput('DIT-ignore-list-of-dispatchable-workflows') !== 'false',
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -44933,7 +44934,7 @@ workflowsListedByAPI, listOfChangedFiles) {
         // required inputs that we need to disclude.
         const dispatchableWorkflowMap = new Map();
         for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-            if (dwtbp in dispatchableWorkflowsThatHaveRequiredInputs) {
+            if (dispatchableWorkflowsThatHaveRequiredInputs.includes(dwtbp)) {
                 console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`);
                 dispatchableWorkflowMap.set(dwtbp, true);
             }
@@ -45304,6 +45305,12 @@ function messageToWriteAsComment(context, actionInputs, dispatchableWorkflowsMet
 `;
         }
     });
+    if (messageBody === '') {
+        messageBody = `
+> [!NOTE]
+> Oh, it looks like there aren't any dispatchable workflows to suggest yet! Don't worry, this comment will auto-update when it runs again. This just means no \`workflow_dispatch\` triggered workflows were relevant to the files in this PR, or they were already triggered by a push from this PR's branch.
+`;
+    }
     return `${commentUniqueIdentifer}${messageHead}${messageBody}`;
 }
 /**
@@ -45395,6 +45402,16 @@ async function entrypoint(actionInputs) {
         });
         logGHRestAPIRateLimitHeaders(workflowsListedByAPI.headers);
         const dispatchableWorkflows = await getDispatchableWorkflows(context, actionInputs, localWorkflowPaths, workflowsListedByAPI, listOfChangedFiles);
+        // A special intercept to enable testing the empty set of dispatchable
+        // workflows is required here, because there's such an abundance of other
+        // cases already, that we can't otherwise force the list to be empty.
+        if (actionInputs.DIT_ignore_list_of_dispatchable_workflows) {
+            console.log('A "debug integration test" input, has been used!');
+            console.log('Ignoring the list of dispatchable inputs.');
+            coreExports.warning('A "debug integration test" input, has been used!');
+            coreExports.warning('Ignoring the list of dispatchable inputs.');
+            dispatchableWorkflows.clear();
+        }
         coreExports.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()));
         // Prepare for the next step by getting the map of workflow paths to
         // metadata for only the paths returned from getDispatchableWorkflows

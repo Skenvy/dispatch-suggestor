@@ -11,6 +11,7 @@ export type ActionInputs = {
     inject_diff_paths: string;
     vvv: boolean;
     DIT_only_use_injected_paths: boolean;
+    DIT_ignore_list_of_dispatchable_workflows: boolean;
 };
 /**
  * Manages getting all the parameter inputs prior to running the action.
