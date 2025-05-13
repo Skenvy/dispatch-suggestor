@@ -45272,7 +45272,7 @@ function messageToWriteAsComment(context, actionInputs, dispatchableWorkflowsMet
         const workflowActionsUrl = `https://github.com/${ownerRepo}/actions/workflows/${workflowFilename}`;
         const workflowHyperlink = `[**${value.name}**](${value.html_url})`;
         const runHistoryHyperlink = `[run history](${workflowActionsUrl})`;
-        const badge = ` [![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`;
+        const badge = `[![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`;
         messageBody += `
 1. ${workflowHyperlink}: see ${runHistoryHyperlink}.
    * Last dispatched run's status on this branch
