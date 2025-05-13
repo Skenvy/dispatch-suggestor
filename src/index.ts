@@ -794,15 +794,19 @@ function messageToWriteAsComment(
   let messageBody = ''
   const ownerRepo = `${owner(context)}/${repoName(context)}`
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const cliSuggestionLine = 'Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:'
   dispatchableWorkflowsMetadata.forEach((value, _key) => {
     const workflowFilename = value.path.slice(WORKFLOW_PATH_PREFIX.length)
     const workflowActionsUrl = `https://github.com/${ownerRepo}/actions/workflows/${workflowFilename}`
-    const workflowHyperlink = `[${value.name}](${value.html_url})`
+    const workflowHyperlink = `[**${value.name}**](${value.html_url})`
     const runHistoryHyperlink = `[run history](${workflowActionsUrl})`
     const badge = ` [![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`
-    const workflowMessage = `Workflow ${workflowHyperlink}: see ${runHistoryHyperlink}. Last dispatched run's status on this branch ${badge}`
-    messageBody += `1. ${workflowMessage}\n`
-    messageBody += ` *. Alternatively run \`gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"\`\n`
+    messageBody += `1. ${workflowHyperlink}: see ${runHistoryHyperlink}. (Go to run history to trigger from browser).
+       * Last dispatched run's status on this branch ${badge}
+       * ${cliSuggestionLine}
+       * \`\`\`
+         gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"
+       * \`\`\`\n`
   })
   return `${commentUniqueIdentifer}\n${messageHead}\n${messageBody}`
 }
