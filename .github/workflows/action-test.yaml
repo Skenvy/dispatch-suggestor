@@ -139,6 +139,7 @@ jobs:
       with:
         sparse-checkout: |
           .github/workflows/*.y*ml
+          .github/workflows/config/*.y*ml
           action.yml
           dist/action.js
           package.json
