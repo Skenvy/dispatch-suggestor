@@ -1,0 +1,32 @@
+# Presence of this file used in development testing
+name: UUT::on.push::inputs::all-required
+on:
+  workflow_dispatch:
+    inputs:
+      a:
+        description: 'something'
+        required: true
+      b:
+        description: 'something'
+        required: true
+      c:
+        description: 'something'
+        required: true
+  push:
+    branches:
+    - 'fake_trunk'
+    paths:
+    - '_test/jkl/**'
+permissions: {}
+defaults:
+  run:
+    shell: bash
+jobs:
+  echo-payload:
+    name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo 🐱‍💻 GitHub 🐱‍👤 Context 📑
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
