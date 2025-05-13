@@ -184,7 +184,6 @@ jobs:
         set -f
         sed -i "s|{{ github.run_id }}|${{ github.run_id }}|g" "$CONFIG_FILE"
         sed -i "s|{{ github.event.pull_request.head.ref }}|${{ github.event.pull_request.head.ref }}|g" "$CONFIG_FILE"
-        cat $CONFIG_FILE
         # Get comment left by API
         contentsOfCommentFromApiFoundByUniqueIdentifier=\
         "$(gh api /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/issues/${{ github.event.number }}/comments \

@@ -204,3 +204,4 @@
        * ```
          gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
          ```
+- terminus: prevent the last test case from inheriting a bonus new-line.
