@@ -179,7 +179,10 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |-
+        # Set un-star-globbing, and replace template vars in expected
         set -f
+        sed -i "s|\${{ github.event.number }}|${{ github.event.number }}|g" .github/workflows/config/uut-expected-comment-blocks.yml
+        sed -i "s|\${{ github.event.pull_request.head.ref }}|${{ github.event.pull_request.head.ref }}|g" .github/workflows/config/uut-expected-comment-blocks.yml
         # Get comment left by API
         contentsOfCommentFromApiFoundByUniqueIdentifier=\
         "$(gh api /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/issues/${{ github.event.number }}/comments \
