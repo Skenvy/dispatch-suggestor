@@ -175,6 +175,8 @@ jobs:
     # (e.g. `set -f`). We also need to pipe the gh api jq output to `tr -d '\r'`
     # to remove the carriage returns that comments made on it seem to have.
     - name: Eval -- comment left by action is as-expected
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |-
         set -f
         # Get comment left by API
