@@ -123,6 +123,15 @@ function headBranch(context: Context): string {
 }
 
 /**
+ * The url to the specific run that this is invoked inside of. Useful for self
+ * linking to the logs of the run.
+ * @param context
+ * @returns
+ */
+function runUrl(context: Context): string {
+  return `https://github.com/${owner(context)}/${repoName(context)}/actions/runs/${context.runId}`
+}
+/**
  * Log+Notice the rate limit from the response headers for the GitHub REST API.
  * @param responseHeaders
  */
@@ -797,7 +806,7 @@ function messageToWriteAsComment(
   // Because messageHead puts its content in a quote block `>` whether on the
   // end of itself, or in combination with the final string concat, it needs
   // TWO \n between the last line with `>` and the subsequent non empty line.
-  const messageHead = `> [!TIP]\n> [**${PROJECT_NAME}**](${PROJECT_URL}) found the following dispatchable workflows to suggest:\n`
+  const messageHead = `> [!TIP]\n> [**${PROJECT_NAME}**](${PROJECT_URL}) found the following dispatchable workflows to suggest: (see this action's [run logs](${runUrl(context)}) for _why_)\n`
   let messageBody = ''
   const ownerRepo = `${owner(context)}/${repoName(context)}`
   dispatchableWorkflowsMetadata.forEach((value) => {
@@ -812,9 +821,10 @@ function messageToWriteAsComment(
    * Or copy the [\`gh api\` cli](https://cli.github.com/manual/gh_api) invocation:
    * \`\`\`
      gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"
-   * \`\`\``
+     \`\`\`
+`
   })
-  return `${commentUniqueIdentifer}\n${messageHead}\n${messageBody}`
+  return `${commentUniqueIdentifer}\n${messageHead}${messageBody}`
 }
 
 /**
