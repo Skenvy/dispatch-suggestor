@@ -211,3 +211,6 @@
        * ```
          gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-branches-paths-ignore-def.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
          ```
+- comment-unique-identifier: 'ACTION-TEST-INPUTS_REQUIRED_OR_NOT'
+  expected_body: |
+    eh

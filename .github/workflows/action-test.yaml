@@ -133,19 +133,19 @@ jobs:
             [.github/workflows/uut-on-push-branches-paths-ignore-def.yml]
           vvv: false
           DIT-only-use-injected-paths: true
-        # - job-name: INPUTS REQUIRED OR NOT
-        #   trunk-branch: fake_trunk
-        #   checkout-root: '.'
-        #   log-event-payload: false
-        #   log-workflow-triggers: false
-        #   comment-unique-identifier: 'ACTION-TEST-INPUTS_REQUIRED_OR_NOT'
-        #   inject-diff-paths: '_test/jkl/some/fake/file/path'
-        #   expected-dispatchable-workflows: >-
-        #     [.github/workflows/uut-on-push-inputs-all-required.yml,
-        #     .github/workflows/uut-on-push-inputs-none-required.yml,
-        #     .github/workflows/uut-on-push-inputs-some-required.yml]
-        #   vvv: false
-        #   DIT-only-use-injected-paths: true
+        - job-name: INPUTS REQUIRED OR NOT
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          comment-unique-identifier: 'ACTION-TEST-INPUTS_REQUIRED_OR_NOT'
+          inject-diff-paths: '_test/jkl/some/fake/file/path'
+          expected-dispatchable-workflows: >-
+            [.github/workflows/uut-on-push-inputs-all-required.yml,
+            .github/workflows/uut-on-push-inputs-none-required.yml,
+            .github/workflows/uut-on-push-inputs-some-required.yml]
+          vvv: false
+          DIT-only-use-injected-paths: true
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
