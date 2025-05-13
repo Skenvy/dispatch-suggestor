@@ -45382,7 +45382,7 @@ async function entrypoint(actionInputs) {
         });
         logGHRestAPIRateLimitHeaders(workflowsListedByAPI.headers);
         const dispatchableWorkflows = await getDispatchableWorkflows(context, actionInputs, localWorkflowPaths, workflowsListedByAPI, listOfChangedFiles);
-        coreExports.setOutput('list-of-dispatchable-workflows', dispatchableWorkflows);
+        coreExports.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()));
         // Prepare for the next step by getting the map of workflow paths to
         // metadata for only the paths returned from getDispatchableWorkflows
         const dispatchableWorkflowsMetadata = mapListRepositoryWorkflows(workflowsListedByAPI, dispatchableWorkflows);
