@@ -148,6 +148,16 @@ jobs:
             .github/workflows/uut-on-push-inputs-some-required.yml]
           vvv: false
           DIT-only-use-injected-paths: true
+        - job-name: EMPTY SET OF DISPATCHABLES
+          trunk-branch: fake_trunk
+          checkout-root: '.'
+          log-event-payload: false
+          log-workflow-triggers: false
+          comment-unique-identifier: 'ACTION-TEST-EMPTY_SET_OF_DISPATCHABLES'
+          inject-diff-paths: '_test/nothing/some/fake/file/path'
+          expected-dispatchable-workflows: '[]'
+          vvv: false
+          DIT-only-use-injected-paths: true
     steps:
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

@@ -240,9 +240,7 @@
        * Last dispatched run's status on this branch
        * [![UUT::on.push::inputs::all-required](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml)
        * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
-       * ```
-         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-all-required.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
-         ```
+       * _This workflow has "required" inputs, so this action refrains from suggesting the `gh` cli._
 
     1. [**UUT::on.push::inputs::none-required**](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/uut-on-push-inputs-none-required.yml): see [run history](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-none-required.yml).
        * Last dispatched run's status on this branch
@@ -256,6 +254,7 @@
        * Last dispatched run's status on this branch
        * [![UUT::on.push::inputs::some-required](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml/badge.svg?branch={{ github.event.pull_request.head.ref }}&event=workflow_dispatch)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml)
        * Or copy the [`gh api` cli](https://cli.github.com/manual/gh_api) invocation:
-       * ```
-         gh api --method POST /repos/Skenvy/dispatch-suggestor/actions/workflows/uut-on-push-inputs-some-required.yml/dispatches -f "ref={{ github.event.pull_request.head.ref }}"
-         ```
+       * _This workflow has "required" inputs, so this action refrains from suggesting the `gh` cli._
+- comment-unique-identifier: 'ACTION-TEST-EMPTY_SET_OF_DISPATCHABLES'
+  expected_body: |
+    eh

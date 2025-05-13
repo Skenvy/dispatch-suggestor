@@ -437,7 +437,7 @@ async function getDispatchableWorkflows(
     // required inputs that we need to disclude.
     const dispatchableWorkflowMap = new Map<string, boolean>()
     for (const dwtbp of dispatchableWorkflowsTriggeredByPush) {
-      if (dwtbp in dispatchableWorkflowsThatHaveRequiredInputs) {
+      if (dispatchableWorkflowsThatHaveRequiredInputs.includes(dwtbp)) {
         console.log(`Dispatchable workflow triggered by push but not included because it requires inputs: ${dwtbp}`)
         dispatchableWorkflowMap.set(dwtbp, true)
       } else {
