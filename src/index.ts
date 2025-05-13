@@ -750,6 +750,11 @@ const PROJECT_NAME = 'dispatch-suggestor'
 const PROJECT_URL = 'https://github.com/Skenvy/dispatch-suggestor'
 
 /**
+ * A prefix to remove from paths to access only the filename that's used in urls
+ */
+const WORKFLOW_PATH_PREFIX = '.github/workflows/'
+
+/**
  * Format the HTML tag we are going to include in our comments and later check
  * to verify if we've already commented or not.
  * @param actionInputs
@@ -771,18 +776,35 @@ function commentUniqueIdentiferHtmlTag(actionInputs: ActionInputs): string {
 
 /**
  * Produces the actual body of the message we are planning to comment with.
+ * @param context
  * @param actionInputs
  * @param dispatchableWorkflowsMetadata
  * @returns
  */
 function messageToWriteAsComment(
+  context: Context,
   actionInputs: ActionInputs,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   dispatchableWorkflowsMetadata: Map<string, components['schemas']['workflow']>
 ): string {
   const commentUniqueIdentifer = commentUniqueIdentiferHtmlTag(actionInputs)
-  const messageBody = `${PROJECT_NAME} comment TODO ${actionInputs.comment_unique_identifier}`
-  return `${commentUniqueIdentifer}\n${messageBody}`
+  // Because messageHead puts its content in a quote block `>` whether on the
+  // end of itself, or in combination with the final string concat, it needs
+  // TWO \n between the last line with `>` and the subsequent non empty line.
+  const messageHead = `> [!TIP]\n> [**${PROJECT_NAME}**](${PROJECT_URL}) found the following dispatchable workflows to suggest:\n`
+  let messageBody = ''
+  const ownerRepo = `${owner(context)}/${repoName(context)}`
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dispatchableWorkflowsMetadata.forEach((value, _key) => {
+    const workflowFilename = value.path.slice(WORKFLOW_PATH_PREFIX.length)
+    const workflowActionsUrl = `https://github.com/${ownerRepo}/actions/workflows/${workflowFilename}`
+    const workflowHyperlink = `[${value.name}](${value.html_url})`
+    const runHistoryHyperlink = `[run history](${workflowActionsUrl})`
+    const badge = ` [![${value.name}](${workflowActionsUrl}/badge.svg?branch=${headBranch(context)}&event=workflow_dispatch)](${workflowActionsUrl})`
+    const workflowMessage = `Workflow ${workflowHyperlink}: see ${runHistoryHyperlink}. Last dispatched run's status on this branch ${badge}`
+    messageBody += `1. ${workflowMessage}\n`
+    messageBody += ` *. Alternatively run \`gh api --method POST /repos/${ownerRepo}/actions/workflows/${workflowFilename}/dispatches -f "ref=${headBranch(context)}"\`\n`
+  })
+  return `${commentUniqueIdentifer}\n${messageHead}\n${messageBody}`
 }
 
 /**
@@ -909,7 +931,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
       repo: repoName(context),
       issue_number: pullRequestNumber(context)
     })
-    const commentBody = messageToWriteAsComment(actionInputs, dispatchableWorkflowsMetadata)
+    const commentBody = messageToWriteAsComment(context, actionInputs, dispatchableWorkflowsMetadata)
     // Get list of comment IDs we've already posted
     const IDs = getListOfCommentIDsForCommentsWithThisActionsIdentifier(commentsOnThisPR, commentBody, actionInputs)
     // Now knowing IDs we need to update or that are already up to date, and the
