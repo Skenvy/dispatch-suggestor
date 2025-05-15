@@ -392,7 +392,7 @@ async function getDispatchableWorkflows(
         // would be to take a map provided to the action as an input that
         // provides values for commonly named inputs, if you have a lot of
         // dispatchables that share common input names and it's desirable
-        // for the dispatch link to populate the URL with some predetermined
+        // for the dispatch cli to populate the inputs with some predetermined
         // values per known input name. For now their run pages will be
         // included in the comment with a message that they require input.
         if (
