@@ -33,7 +33,7 @@ E.g. if you have several `workflow_dispatch` based workflows that are each also 
 * Default `'main'`.
 ### `checkout-root`
 * _Optional_
-* The path to the root folder of the checked out repo, relative to the default working-directory, `$GITHUB_WORKSPACE`. Should be the same as the value provided to `@actions/checkout` `with.path:`, or default.
+* The path to the root folder of the checked out repo, relative to the default working-directory, `$GITHUB_WORKSPACE`. It should be the same as the value provided to `@actions/checkout` `with.path:`, or default.
 * Default `'.'`.
 
 ## Inputs -- less common and logging options

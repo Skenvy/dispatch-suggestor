@@ -44903,9 +44903,9 @@ workflowsListedByAPI, listOfChangedFiles) {
                 // would be to take a map provided to the action as an input that
                 // provides values for commonly named inputs, if you have a lot of
                 // dispatchables that share common input names and it's desirable
-                // for the dispatch cli to populate the inputs with some predetermined
-                // values per known input name. For now their run pages will be
-                // included in the comment with a message that they require input.
+                // for the Dispatch CLI to populate inputs with predetermined values
+                // for known input names. The workflow run pages will then be
+                // included in the comment, noting any required inputs.
                 if (workflow.on.workflow_dispatch != null &&
                     'inputs' in workflow.on.workflow_dispatch &&
                     workflow.on.workflow_dispatch.inputs != null) {

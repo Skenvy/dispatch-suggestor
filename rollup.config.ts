@@ -29,7 +29,7 @@ const config = {
     license({
       sourcemap: true,
       // Rather than include the text of all license in the action.js, just link
-      // to the full list output seperately and committed adjacent to action.js.
+      // to the full list output separately and committed adjacent to action.js.
       banner: {
         commentStyle: 'regular',
         content: 'For licenses see https://github.com/Skenvy/dispatch-suggestor/blob/main/dist/licenses.txt'
