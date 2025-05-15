@@ -1,7 +1,7 @@
 name: 'Dispatch Suggestor'
 description: >-
-  'Suggests dispatchable workflows for a branch that would otherwise
-  trigger the dispatchable workflows from pushes to the trunk.'
+  Suggests dispatchable workflows for a branch that would otherwise
+  trigger the dispatchable workflows from pushes to the trunk
 author: 'Nathan Levett'
 branding:
   icon: 'sunrise'  
@@ -10,68 +10,72 @@ inputs:
   # Token input
   github_token:
     description: >-
-      'Requires `permissions: { actions: read,
-      contents: read, pull-requests: write }`'
+      Requires `permissions: { actions: read,
+      contents: read, pull-requests: write }`
     required: true
   # Regularly expected inputs
   trunk-branch:
-    description: 'Name of the trunk branch, if not main'
+    description: >-
+      Name of the trunk branch, if not main
     required: false
     default: 'main'
   checkout-root:
     description: >-
-      'The path to the root folder of the checked out repo, relative to the
+      The path to the root folder of the checked out repo, relative to the
       default working-directory, `$GITHUB_WORKSPACE`. Should be the same as the
-      value provided to `@actions/checkout` `with.path:`, or default.'
+      value provided to `@actions/checkout` `with.path:`, or default.
     required: false
     default: '.'
   # Less commonly expected inputs
   log-event-payload:
-    description: 'If not false, will print the whole triggering event payload.'
+    description: >-
+      If not false, will print the whole triggering event payload.
     required: false
     default: 'false'
   log-workflow-triggers:
     description: >-
-      'If not false, will print the triggers for all dispatchable workflows.'
+      If not false, will print the triggers for all dispatchable workflows.
     required: false
     default: 'false'
   comment-unique-identifier:
     description: >-
-      'A hidden string the action can use to identify any previously written
+      A hidden string the action can use to identify any previously written
       comment, to edit it rather than add indefinitely. Only useful if you're
-      using this action with multiple configurations on the same PR.'
+      using this action with multiple configurations on the same PR.
     required: false
     default: 'DEFAULT_COMMENT_UNIQUE_IDENTIFIER'
   inject-diff-paths:
     description: >-
-      'A comma-separated list of paths to inject into the list of changed files'
+      A comma-separated list of paths to inject into the list of changed files
     required: false
     default: ''
   vvv:
-    description: 'Very very verbose. Include debugging logs.'
+    description: >-
+      Very very verbose. Include debugging logs.
     required: false
     default: 'false'
   # debug-integration-test (DIT) inputs only expected to be used during testing!
   DIT-only-use-injected-paths:
     description: >-
-      'to be able to test the "paths-ignore" input, we need some test cases to
-      ignore the actual diff and only run on the paths in "inject-diff-paths"'
+      To be able to test the "paths-ignore" input, we need some test cases to
+      ignore the actual diff and only run on the paths in "inject-diff-paths"
     required: false
     default: 'false'
   DIT-ignore-list-of-dispatchable-workflows:
     description: >-
-      'Because we have "paths-ignore" test cases, we need a special input to
+      Because we have "paths-ignore" test cases, we need a special input to
       handle testing the case of an empty list of workflows, because we are not
-      able to otherwise manufacture an empty set of workflows to suggest'
+      able to otherwise manufacture an empty set of workflows to suggest
     required: false
     default: 'false'
 outputs:
   list-of-changed-files:
-    description: 'A list of the files that have been touched by this PR'
+    description: >-
+      A list of the files that have been touched by this PR
   list-of-dispatchable-workflows:
     description: >-
-      'A list of the workflows found in this
-      repo that have workflow_dispatch triggers.'
+      A list of the workflows found in this
+      repo that have workflow_dispatch triggers.
 runs:
   using: 'node20'
   main: 'dist/action.js'
