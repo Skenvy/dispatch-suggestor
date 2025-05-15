@@ -25,6 +25,7 @@ inputs:
       value provided to `@actions/checkout` `with.path:`, or default.'
     required: false
     default: '.'
+  # Less commonly expected inputs
   log-event-payload:
     description: 'If not false, will print the whole triggering event payload.'
     required: false
@@ -34,7 +35,6 @@ inputs:
       'If not false, will print the triggers for all dispatchable workflows.'
     required: false
     default: 'false'
-  # Less commonly expected inputs
   comment-unique-identifier:
     description: >-
       'A hidden string the action can use to identify any previously written

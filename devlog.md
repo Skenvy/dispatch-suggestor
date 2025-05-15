@@ -1,4 +1,7 @@
 # Devlog
+> [!CAUTION]
+> See ["How to approach reading my devlogs"](https://github.com/Skenvy/Skenvy/blob/main/extra/docs/devlog.md) if you need to.
+
 This is motivated by forgetting several times to test a branch deployment by dispatching its workflow, that would otherwise trigger from a push on the trunk, when working in repositories that followed a pattern of only deploying from non-trunk branches when manually dispatched. Hence the summary of what this tries to do is;
 > Suggests dispatchable workflows for a branch that would otherwise trigger the dispatchable workflows from pushes to the trunk.
 

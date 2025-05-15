@@ -1008,7 +1008,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ---
 
 Name: universal-user-agent
-Version: 7.0.2
+Version: 7.0.3
 License: ISC
 Private: false
 Description: Get a user agent string across all JavaScript Runtime Environments
@@ -1588,7 +1588,7 @@ THE SOFTWARE.
 ---
 
 Name: yaml
-Version: 2.7.1
+Version: 2.8.0
 License: ISC
 Private: false
 Description: JavaScript parser and stringifier for YAML

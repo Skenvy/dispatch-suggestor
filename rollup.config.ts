@@ -11,6 +11,9 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// See https://github.com/actions/typescript-action/issues/1010 RE licenses.
+// See https://github.com/actions/typescript-action/issues/1011 RE "sourcemap"
+
 const config = {
   input: 'src/action.ts',
   output: {
@@ -25,10 +28,13 @@ const config = {
     commonjs(),
     license({
       sourcemap: true,
+      // Rather than include the text of all license in the action.js, just link
+      // to the full list output separately and committed adjacent to action.js.
       banner: {
         commentStyle: 'regular',
         content: 'For licenses see https://github.com/Skenvy/dispatch-suggestor/blob/main/dist/licenses.txt'
       },
+      // Output ALL licenses to ./dist/licenses.txt
       thirdParty: {
         includePrivate: true,
         includeSelf: true,

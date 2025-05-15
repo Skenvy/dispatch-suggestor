@@ -1,0 +1,27 @@
+name: Dispatch 📤 Suggestor 📥
+on:
+  pull_request:
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+jobs:
+  suggestor:
+    name: Dispatch 📤 Suggestor 📥
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: 🏁 Checkout
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          .github/workflows/*.y*ml
+        sparse-checkout-cone-mode: false
+    - name: Dispatch 📤 Suggestor 📥
+      id: dispatch-suggestor
+      uses: Skenvy/dispatch-suggestor@c43c6460d1dc0380a1d2b47033aeeb023f95db42 # pre v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: List changed files
+      run: echo "${{ steps.dispatch-suggestor.outputs.list-of-changed-files }}"
+    - name: List dispatchable workflows
+      run: echo "${{ steps.dispatch-suggestor.outputs.list-of-dispatchable-workflows }}"
