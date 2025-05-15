@@ -93,6 +93,9 @@ on:
 ```
 
 ## A complete example
+See this example [here](https://github.com/Skenvy/dispatch-suggestor/blob/main/.github/workflows/example.yml).
+
+[![example workflow badge](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/example.yml/badge.svg)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/example.yml)
 ```yaml
 name: Dispatch 📤 Suggestor 📥
 on:
