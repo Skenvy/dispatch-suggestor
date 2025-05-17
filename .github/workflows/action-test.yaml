@@ -4,12 +4,13 @@ on:
 defaults:
   run:
     shell: bash
-permissions:
-  actions: read
-  contents: read
-  pull-requests: write
+permissions: {}
 jobs:
   test:
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
     name: TEST -- ${{ matrix.job-name }}
     runs-on: 'ubuntu-latest'
     # What are we testing for here? Well the repo about is...
@@ -217,12 +218,13 @@ jobs:
     - name: Eval -- comment left by action is as-expected
       env:
         GH_TOKEN: ${{ github.token }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
       run: |-
         # Set un-star-globbing, and replace template vars in expected
         CONFIG_FILE=".github/workflows/config/uut-expected-comment-blocks.yml"
         set -f
         sed -i "s|{{ github.run_id }}|${{ github.run_id }}|g" "$CONFIG_FILE"
-        sed -i "s|{{ github.event.pull_request.head.ref }}|${{ github.event.pull_request.head.ref }}|g" "$CONFIG_FILE"
+        sed -i "s|{{ github.event.pull_request.head.ref }}|${{ env.HEAD_REF }}|g" "$CONFIG_FILE"
         # Get comment left by API
         contentsOfCommentFromApiFoundByUniqueIdentifier=\
         "$(gh api /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/issues/${{ github.event.number }}/comments \

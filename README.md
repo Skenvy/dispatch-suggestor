@@ -1,6 +1,7 @@
 # [dispatch-suggestor](https://github.com/Skenvy/dispatch-suggestor)
 [![Test](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/main.yaml/badge.svg?branch=main&event=push)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/main.yaml)
 [![Action Tests](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/action-test.yaml/badge.svg)](https://github.com/Skenvy/dispatch-suggestor/actions/workflows/action-test.yaml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Skenvy/dispatch-suggestor/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Skenvy/dispatch-suggestor)
 
 See it on the 🏪 [marketplace](https://github.com/marketplace/actions/dispatch-suggestor).
 
