@@ -37,7 +37,7 @@ E.g. if you have several `workflow_dispatch` based workflows that are each also 
 * Default `'.'`.
 ### `list-workflows-pagination-limit`
 * _Optional_
-* The maximum amount of workflows to paginate over from the [`list-repository-workflows`](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows) API. An input of `0` will retrieve all.
+* The maximum number of workflows to paginate over from the [`list-repository-workflows`](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows) API. An input of `0` will retrieve all.
 * Default `100`.
 
 ## Inputs -- more niche options

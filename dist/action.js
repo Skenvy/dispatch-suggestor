@@ -44604,7 +44604,7 @@ async function getActionInputs() {
         return {
             trunk_branch: coreExports.getInput('trunk-branch'),
             checkout_root: coreExports.getInput('checkout-root'),
-            list_workflows_pagination_limit: Math.trunc(Number(coreExports.getInput('list_workflows_pagination_limit'))),
+            list_workflows_pagination_limit: getIntegerInput('list-workflows-pagination-limit', 100),
             comment_unique_identifier: coreExports.getInput('comment-unique-identifier'),
             inject_diff_paths: coreExports.getInput('inject-diff-paths'),
             log_event_payload: coreExports.getBooleanInput('log-event-payload'),
@@ -44621,6 +44621,17 @@ async function getActionInputs() {
         }
         return null;
     }
+}
+/**
+ * Read the action named input. If it's unset, use the default. If the input was
+ * provided but causes a NaN, then bypass and return the truncated default.
+ * @param name
+ * @param defaultValue
+ * @returns
+ */
+function getIntegerInput(name, defaultValue) {
+    const parsedInt = Number.parseInt(coreExports.getInput(name) || `${defaultValue}`, 10);
+    return Number.isNaN(parsedInt) ? Math.trunc(defaultValue) : parsedInt;
 }
 /**
  * Sets the step status to failed if the event that triggered this wasn't a PR.

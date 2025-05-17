@@ -160,7 +160,9 @@ jobs:
         - job-name: EMPTY SET OF DISPATCHABLES
           trunk-branch: fake_trunk
           checkout-root: '.'
-          # a limit of 1 this should only ever get THIS workflow in its list
+          # a limit of 1 means this run should only ever get THIS workflow in
+          # its list internally, which wont match with any because this isn't
+          # dispatchable
           list-workflows-pagination-limit: 1
           comment-unique-identifier: 'ACTION-TEST-EMPTY_SET_OF_DISPATCHABLES'
           inject-diff-paths: '_test/nothing/some/fake/file/path'
@@ -191,14 +193,13 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         trunk-branch: ${{ matrix.trunk-branch }}
         checkout-root: ${{ matrix.checkout-root }}
-        list-workflows-pagination-limit: ${{  matrix.list-workflows-pagination-limit }}
+        list-workflows-pagination-limit: ${{ matrix.list-workflows-pagination-limit }}
         comment-unique-identifier: ${{ matrix.comment-unique-identifier }}
         inject-diff-paths: ${{ matrix.inject-diff-paths }}
         log-event-payload: ${{ matrix.log-event-payload }}
         log-workflow-triggers: ${{ matrix.log-workflow-triggers }}
         vvv: ${{ matrix.vvv }}
         DIT-only-use-injected-paths: ${{ matrix.DIT-only-use-injected-paths }}
-        DIT-ignore-list-of-dispatchable-workflows: ${{ matrix.DIT-ignore-list-of-dispatchable-workflows }}
     - name: Log -- List changed files
       run: echo "${{ steps.test-step.outputs.list-of-changed-files }}"
     - name: Log -- List dispatchable workflows

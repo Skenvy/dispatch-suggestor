@@ -504,7 +504,7 @@ gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-1
 # Using `per_page` and `page`
 gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "/repos/Skenvy/dispatch-suggestor/actions/workflows?per_page=1&page=1"
 ```
-Two important observations for us to make here is that the data that comes back includes a `total_count` field which is not the count of workflows retrieved in this call of the API, but the total amount of workflows in the repo. Because of this, it can't be used to check for an empty response. For example, if we ask this for the 100th page, it will give back something along the lines of
+Two important observations for us to make here is that the data that comes back includes a `total_count` field which is not the count of workflows retrieved in this call of the API, but the total number of workflows in the repo. Because of this, it can't be used to check for an empty response. For example, if we ask this for the 100th page, it will give back something along the lines of
 ```json
 {
   "total_count": 17,

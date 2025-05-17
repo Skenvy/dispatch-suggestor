@@ -47,7 +47,7 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
     return {
       trunk_branch: core.getInput('trunk-branch'),
       checkout_root: core.getInput('checkout-root'),
-      list_workflows_pagination_limit: Math.trunc(Number(core.getInput('list_workflows_pagination_limit'))),
+      list_workflows_pagination_limit: getIntegerInput('list-workflows-pagination-limit', 100),
       comment_unique_identifier: core.getInput('comment-unique-identifier'),
       inject_diff_paths: core.getInput('inject-diff-paths'),
       log_event_payload: core.getBooleanInput('log-event-payload'),
@@ -63,6 +63,18 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
     }
     return null
   }
+}
+
+/**
+ * Read the action named input. If it's unset, use the default. If the input was
+ * provided but causes a NaN, then bypass and return the truncated default.
+ * @param name
+ * @param defaultValue
+ * @returns
+ */
+function getIntegerInput(name: string, defaultValue: number): number {
+  const parsedInt = Number.parseInt(core.getInput(name) || `${defaultValue}`, 10)
+  return Number.isNaN(parsedInt) ? Math.trunc(defaultValue) : parsedInt
 }
 
 /**

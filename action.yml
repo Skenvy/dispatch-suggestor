@@ -28,7 +28,7 @@ inputs:
     default: '.'
   list-workflows-pagination-limit:
     description: >-
-      The maximum amount of workflows to paginate over from the
+      The maximum number of workflows to paginate over from the
       list-repository-workflows API. An input of 0 will retrieve all.
     required: false
     default: '100'
