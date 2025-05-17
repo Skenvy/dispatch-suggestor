@@ -5,10 +5,11 @@ export type ActionInputs = {
     github_token: string;
     trunk_branch: string;
     checkout_root: string;
-    log_event_payload: boolean;
-    log_workflow_triggers: boolean;
+    list_workflows_pagination_limit: number;
     comment_unique_identifier: string;
     inject_diff_paths: string;
+    log_event_payload: boolean;
+    log_workflow_triggers: boolean;
     vvv: boolean;
     DIT_only_use_injected_paths: boolean;
     DIT_ignore_list_of_dispatchable_workflows: boolean;
