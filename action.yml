@@ -26,17 +26,13 @@ inputs:
       value provided to `@actions/checkout` `with.path:`, or default.
     required: false
     default: '.'
-  # Less commonly expected inputs
-  log-event-payload:
+  list-workflows-pagination-limit:
     description: >-
-      If not false, will print the whole triggering event payload.
+      The maximum number of workflows to paginate over from the
+      list-repository-workflows API. An input of 0 will retrieve all.
     required: false
-    default: 'false'
-  log-workflow-triggers:
-    description: >-
-      If not false, will print the triggers for all dispatchable workflows.
-    required: false
-    default: 'false'
+    default: '100'
+  # More niche options
   comment-unique-identifier:
     description: >-
       A hidden string the action can use to identify any previously written
@@ -49,6 +45,17 @@ inputs:
       A comma-separated list of paths to inject into the list of changed files
     required: false
     default: ''
+  # Logging options
+  log-event-payload:
+    description: >-
+      If not false, will print the whole triggering event payload.
+    required: false
+    default: 'false'
+  log-workflow-triggers:
+    description: >-
+      If not false, will print the triggers for all dispatchable workflows.
+    required: false
+    default: 'false'
   vvv:
     description: >-
       Very very verbose. Include debugging logs.
@@ -59,13 +66,6 @@ inputs:
     description: >-
       To be able to test the "paths-ignore" input, we need some test cases to
       ignore the actual diff and only run on the paths in "inject-diff-paths"
-    required: false
-    default: 'false'
-  DIT-ignore-list-of-dispatchable-workflows:
-    description: >-
-      Because we have "paths-ignore" test cases, we need a special input to
-      handle testing the case of an empty list of workflows, because we are not
-      able to otherwise manufacture an empty set of workflows to suggest
     required: false
     default: 'false'
 outputs:

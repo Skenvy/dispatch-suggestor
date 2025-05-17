@@ -21,17 +21,21 @@ import { components } from '@octokit/openapi-types'
  * A 1:1 of the inputs expected by the action.yml
  */
 export type ActionInputs = {
+  // Token input
   github_token: string
+  // Regularly expected inputs
   trunk_branch: string
   checkout_root: string
-  log_event_payload: boolean
-  log_workflow_triggers: boolean
+  list_workflows_pagination_limit: number
+  // More niche options
   comment_unique_identifier: string
   inject_diff_paths: string
+  // Logging options
+  log_event_payload: boolean
+  log_workflow_triggers: boolean
   vvv: boolean
   // debug-integration-tests- (DIT-)
   DIT_only_use_injected_paths: boolean
-  DIT_ignore_list_of_dispatchable_workflows: boolean
 }
 
 /**
@@ -43,13 +47,13 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
     return {
       trunk_branch: core.getInput('trunk-branch'),
       checkout_root: core.getInput('checkout-root'),
-      log_event_payload: core.getInput('log-event-payload') !== 'false',
-      log_workflow_triggers: core.getInput('log-workflow-triggers') !== 'false',
+      list_workflows_pagination_limit: getIntegerInput('list-workflows-pagination-limit', 100),
       comment_unique_identifier: core.getInput('comment-unique-identifier'),
       inject_diff_paths: core.getInput('inject-diff-paths'),
-      vvv: core.getInput('vvv') !== 'false',
-      DIT_only_use_injected_paths: core.getInput('DIT-only-use-injected-paths') !== 'false',
-      DIT_ignore_list_of_dispatchable_workflows: core.getInput('DIT-ignore-list-of-dispatchable-workflows') !== 'false',
+      log_event_payload: core.getBooleanInput('log-event-payload'),
+      log_workflow_triggers: core.getBooleanInput('log-workflow-triggers'),
+      vvv: core.getBooleanInput('vvv'),
+      DIT_only_use_injected_paths: core.getBooleanInput('DIT-only-use-injected-paths'),
       github_token: core.getInput('github_token')
     }
   } catch (error) {
@@ -59,6 +63,18 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
     }
     return null
   }
+}
+
+/**
+ * Read the action named input. If it's unset, use the default. If the input was
+ * provided but causes a NaN, then bypass and return the truncated default.
+ * @param name
+ * @param defaultValue
+ * @returns
+ */
+function getIntegerInput(name: string, defaultValue: number): number {
+  const parsedInt = Number.parseInt(core.getInput(name) || `${defaultValue}`, 10)
+  return Number.isNaN(parsedInt) ? Math.trunc(defaultValue) : parsedInt
 }
 
 /**
@@ -133,6 +149,7 @@ function headBranch(context: Context): string {
 function runUrl(context: Context): string {
   return `https://github.com/${owner(context)}/${repoName(context)}/actions/runs/${context.runId}`
 }
+
 /**
  * Log+Notice the rate limit from the response headers for the GitHub REST API.
  * @param responseHeaders
@@ -156,14 +173,15 @@ function logGHRestAPIRateLimitHeaders(responseHeaders: ResponseHeaders) {
  */
 function mapListRepositoryWorkflows(
   // https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
-  workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'],
+  workflowsListedByAPI: components['schemas']['workflow'][],
   onlyIncludeThesePaths: Map<string, boolean> | null
 ): Map<string, components['schemas']['workflow']> {
-  let mappedWfs: { path: string; metadata: components['schemas']['workflow'] }[] =
-    workflowsListedByAPI.data.workflows.map((workflow) => ({
+  let mappedWfs: { path: string; metadata: components['schemas']['workflow'] }[] = workflowsListedByAPI.map(
+    (workflow) => ({
       path: workflow.path,
       metadata: workflow
-    }))
+    })
+  )
   if (onlyIncludeThesePaths) {
     const pathsToInclude = Array.from(onlyIncludeThesePaths.keys())
     // Filter "all" API workflows to only those we found had paths we care about
@@ -338,6 +356,86 @@ async function fetchChangedFiles(context: Context, actionInputs: ActionInputs): 
 const DWTBP_PREFIX = 'Dispatchable workflow triggered by push:'
 
 /**
+ * List all workflows known to the API, upto the limit set by the action input
+ * `list-workflows-pagination-limit`
+ * @param ghRestAPI
+ * @param actionInputs
+ * @param context
+ * @returns
+ */
+async function listRepoWorkflowsAPI(
+  ghRestAPI: Octokit,
+  actionInputs: ActionInputs,
+  context: Context
+): Promise<components['schemas']['workflow'][]> {
+  const MAX_PER_PAGE = 100
+  const workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'][] = []
+  // If the action input limit is less than or the same as the max per page and
+  // not "0" (the "get everything" option) then just do one call with the limit
+  console.log(`Listing workflows from the API: Pagination limit set to ${actionInputs.list_workflows_pagination_limit}`)
+  if (
+    actionInputs.list_workflows_pagination_limit <= MAX_PER_PAGE &&
+    actionInputs.list_workflows_pagination_limit > 0
+  ) {
+    workflowsListedByAPI.push(
+      await ghRestAPI.actions.listRepoWorkflows({
+        owner: owner(context),
+        repo: repoName(context),
+        page: 1,
+        per_page: actionInputs.list_workflows_pagination_limit
+      })
+    )
+    logGHRestAPIRateLimitHeaders(workflowsListedByAPI[0].headers)
+    // Otherwise we need to know the amount of workflows and make multiple calls
+  } else {
+    // Get the first call so we can see the "total_count"
+    let tempList = await ghRestAPI.actions.listRepoWorkflows({
+      owner: owner(context),
+      repo: repoName(context),
+      page: 1,
+      per_page: MAX_PER_PAGE
+    })
+    logGHRestAPIRateLimitHeaders(tempList.headers)
+    // If the pagination limit set on the action input is <=0, then our limit is
+    // set to the amount of workflows, total_count, that are in the repo. Else,
+    // we set the limit to the action input defined limit, which we know is >0.
+    const paginationLimit =
+      actionInputs.list_workflows_pagination_limit <= 0
+        ? tempList.data.total_count
+        : actionInputs.list_workflows_pagination_limit
+    workflowsListedByAPI.push(tempList)
+    const pageLimit = Math.ceil(paginationLimit / MAX_PER_PAGE)
+    let perPage: number
+    if (pageLimit > 1) {
+      for (let pageNum = 2; pageNum <= pageLimit; pageNum++) {
+        // If we're on the last page, to make sure we observe the action input
+        // defined limit, if it's above 0, minus sum of per_page's already run
+        perPage =
+          actionInputs.list_workflows_pagination_limit <= 0 || pageNum < pageLimit
+            ? MAX_PER_PAGE
+            : paginationLimit - MAX_PER_PAGE * (pageLimit - 1)
+        tempList = await ghRestAPI.actions.listRepoWorkflows({
+          owner: owner(context),
+          repo: repoName(context),
+          page: pageNum,
+          per_page: perPage
+        })
+        logGHRestAPIRateLimitHeaders(tempList.headers)
+        if (tempList.data.workflows.length === 0) {
+          // If our input limit is higher than what we have, rather than
+          // lowering our internal limit var, just break when the result
+          // is empty.
+          break
+        }
+        workflowsListedByAPI.push(tempList)
+      }
+    }
+  }
+  // Now lastly rollup all workflows together
+  return workflowsListedByAPI.flatMap((singleApiResponse) => singleApiResponse.data.workflows)
+}
+
+/**
  * STEP TWO: Get the list of dispatchable workflows that we want to mention.
  *
  * This checks both the locally checkout out workflows and the result of the API
@@ -355,7 +453,7 @@ async function getDispatchableWorkflows(
   actionInputs: ActionInputs,
   localWorkflowPaths: { directory: string; paths: string[] },
   // https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows
-  workflowsListedByAPI: Endpoints['GET /repos/{owner}/{repo}/actions/workflows']['response'],
+  workflowsListedByAPI: components['schemas']['workflow'][],
   listOfChangedFiles: string[]
 ): Promise<Map<string, boolean>> {
   try {
@@ -979,11 +1077,7 @@ export async function entrypoint(actionInputs: ActionInputs) {
     // Get the list of locally checked out workflows.
     const localWorkflowPaths = utils.getFilesMatchingGithubWorkflows(actionInputs.checkout_root)
     // As well as the set of workflows known to the API.
-    const workflowsListedByAPI = await ghRestAPI.actions.listRepoWorkflows({
-      owner: owner(context),
-      repo: repoName(context)
-    })
-    logGHRestAPIRateLimitHeaders(workflowsListedByAPI.headers)
+    const workflowsListedByAPI = await listRepoWorkflowsAPI(ghRestAPI, actionInputs, context)
 
     const dispatchableWorkflows = await getDispatchableWorkflows(
       context,
@@ -992,16 +1086,6 @@ export async function entrypoint(actionInputs: ActionInputs) {
       workflowsListedByAPI,
       listOfChangedFiles
     )
-    // A special intercept to enable testing the empty set of dispatchable
-    // workflows is required here, because there's such an abundance of other
-    // cases already, that we can't otherwise force the list to be empty.
-    if (actionInputs.DIT_ignore_list_of_dispatchable_workflows) {
-      console.log('A "debug integration test" input, has been used!')
-      console.log('Ignoring the list of dispatchable inputs.')
-      core.warning('A "debug integration test" input, has been used!')
-      core.warning('Ignoring the list of dispatchable inputs.')
-      dispatchableWorkflows.clear()
-    }
     core.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()))
 
     // Prepare for the next step by getting the map of workflow paths to

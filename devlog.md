@@ -495,3 +495,19 @@ Someone probably needs to tell Co-pilot to run dependabot lol it wants this to b
 ```
 </details>
 
+
+### Handle pagination of the list all repo workflows API
+The API for listing repo workflows [see docs](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows) uses pagination, specifically `per_page` and `page`, with a `per_page` default of `30` and max of `100`. The general gh api pagination docs [here](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api?apiVersion=2022-11-28) include a way to specify these in curl. Although they don't mention using them this way on the gh CLI, it functions much the same way. For instance, to get the list of workflows for this repo,
+```bash
+# Default
+gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/Skenvy/dispatch-suggestor/actions/workflows
+# Using `per_page` and `page`
+gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "/repos/Skenvy/dispatch-suggestor/actions/workflows?per_page=1&page=1"
+```
+Two important observations for us to make here are that the data that comes back includes a `total_count` field, which is not the count of workflows retrieved in this call of the API, but the total number of workflows in the repo. Because of this, it can't be used to check for an empty response. For example, if we ask this for the 100th page, it will give back something along the lines of
+```json
+{
+  "total_count": 17,
+  "workflows": []
+}
+```

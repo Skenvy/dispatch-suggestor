@@ -35,16 +35,12 @@ E.g. if you have several `workflow_dispatch` based workflows that are each also 
 * _Optional_
 * The path to the root folder of the checked out repo, relative to the default working-directory, `$GITHUB_WORKSPACE`. It should be the same as the value provided to `@actions/checkout` `with.path:`, or default.
 * Default `'.'`.
+### `list-workflows-pagination-limit`
+* _Optional_
+* The maximum number of workflows to paginate over from the [`list-repository-workflows`](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#list-repository-workflows) API. An input of `0` will retrieve all.
+* Default `100`.
 
-## Inputs -- less common and logging options
-### `log-event-payload`
-* _Optional_
-* If not false, will print the whole triggering event payload.
-* Default `'false'`.
-### `log-workflow-triggers`
-* _Optional_
-* If not false, will print the triggers for all dispatchable workflows.
-* Default `'false'`.
+## Inputs -- more niche options
 ### `comment-unique-identifier`
 * _Optional_
 * A hidden string the action can use to identify any previously written comment, to edit it rather than add indefinitely. Only useful if you're using this action with multiple configurations on the same PR.
@@ -53,6 +49,16 @@ E.g. if you have several `workflow_dispatch` based workflows that are each also 
 * _Optional_
 * A comma-separated list of paths to inject into the list of changed files.
 * Default `''`.
+
+## Inputs -- logging options
+### `log-event-payload`
+* _Optional_
+* If not false, will print the whole triggering event payload.
+* Default `'false'`.
+### `log-workflow-triggers`
+* _Optional_
+* If not false, will print the triggers for all dispatchable workflows.
+* Default `'false'`.
 ### `vvv`
 * _Optional_
 * Very very verbose. Include debugging logs.
