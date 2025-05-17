@@ -62,7 +62,7 @@ install: install_npm
 # https://docs.npmjs.com/cli/v8/commands/npm-update
 .PHONY: update
 update: install_npm
-	$(NPM) update
+	$(NPM) update --save
 
 .PHONY: clean
 clean:
