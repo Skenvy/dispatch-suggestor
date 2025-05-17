@@ -44866,6 +44866,7 @@ async function listRepoWorkflowsAPI(ghRestAPI, actionInputs, context) {
     const workflowsListedByAPI = [];
     // If the action input limit is less than or the same as the max per page and
     // not "0" (the "get everything" option) then just do one call with the limit
+    console.log(`Listing workflows from the API: Pagination limit set to ${actionInputs.list_workflows_pagination_limit}`);
     if (actionInputs.list_workflows_pagination_limit <= MAX_PER_PAGE &&
         actionInputs.list_workflows_pagination_limit > 0) {
         workflowsListedByAPI.push(await ghRestAPI.actions.listRepoWorkflows({
