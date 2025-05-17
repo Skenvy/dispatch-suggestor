@@ -4,10 +4,11 @@ on:
 defaults:
   run:
     shell: bash
-permissions:
-  contents: read
+permissions: {}
 jobs:
   test:
+    permissions:
+      contents: read
     name: Test List Verify
     runs-on: 'ubuntu-latest'
     steps:
