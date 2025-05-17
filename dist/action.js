@@ -44611,7 +44611,6 @@ async function getActionInputs() {
             log_workflow_triggers: coreExports.getBooleanInput('log-workflow-triggers'),
             vvv: coreExports.getBooleanInput('vvv'),
             DIT_only_use_injected_paths: coreExports.getBooleanInput('DIT-only-use-injected-paths'),
-            DIT_ignore_list_of_dispatchable_workflows: coreExports.getBooleanInput('DIT-ignore-list-of-dispatchable-workflows'),
             github_token: coreExports.getInput('github_token')
         };
     }
@@ -45477,16 +45476,6 @@ async function entrypoint(actionInputs) {
         // As well as the set of workflows known to the API.
         const workflowsListedByAPI = await listRepoWorkflowsAPI(ghRestAPI, actionInputs, context);
         const dispatchableWorkflows = await getDispatchableWorkflows(context, actionInputs, localWorkflowPaths, workflowsListedByAPI, listOfChangedFiles);
-        // A special intercept to enable testing the empty set of dispatchable
-        // workflows is required here, because there's such an abundance of other
-        // cases already, that we can't otherwise force the list to be empty.
-        if (actionInputs.DIT_ignore_list_of_dispatchable_workflows) {
-            console.log('A "debug integration test" input, has been used!');
-            console.log('Ignoring the list of dispatchable inputs.');
-            coreExports.warning('A "debug integration test" input, has been used!');
-            coreExports.warning('Ignoring the list of dispatchable inputs.');
-            dispatchableWorkflows.clear();
-        }
         coreExports.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()));
         // Prepare for the next step by getting the map of workflow paths to
         // metadata for only the paths returned from getDispatchableWorkflows

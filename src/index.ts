@@ -36,7 +36,6 @@ export type ActionInputs = {
   vvv: boolean
   // debug-integration-tests- (DIT-)
   DIT_only_use_injected_paths: boolean
-  DIT_ignore_list_of_dispatchable_workflows: boolean
 }
 
 /**
@@ -55,7 +54,6 @@ export async function getActionInputs(): Promise<ActionInputs | null> {
       log_workflow_triggers: core.getBooleanInput('log-workflow-triggers'),
       vvv: core.getBooleanInput('vvv'),
       DIT_only_use_injected_paths: core.getBooleanInput('DIT-only-use-injected-paths'),
-      DIT_ignore_list_of_dispatchable_workflows: core.getBooleanInput('DIT-ignore-list-of-dispatchable-workflows'),
       github_token: core.getInput('github_token')
     }
   } catch (error) {
@@ -1077,16 +1075,6 @@ export async function entrypoint(actionInputs: ActionInputs) {
       workflowsListedByAPI,
       listOfChangedFiles
     )
-    // A special intercept to enable testing the empty set of dispatchable
-    // workflows is required here, because there's such an abundance of other
-    // cases already, that we can't otherwise force the list to be empty.
-    if (actionInputs.DIT_ignore_list_of_dispatchable_workflows) {
-      console.log('A "debug integration test" input, has been used!')
-      console.log('Ignoring the list of dispatchable inputs.')
-      core.warning('A "debug integration test" input, has been used!')
-      core.warning('Ignoring the list of dispatchable inputs.')
-      dispatchableWorkflows.clear()
-    }
     core.setOutput('list-of-dispatchable-workflows', Array.from(dispatchableWorkflows.keys()))
 
     // Prepare for the next step by getting the map of workflow paths to
