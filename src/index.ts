@@ -398,7 +398,7 @@ async function listRepoWorkflowsAPI(
     logGHRestAPIRateLimitHeaders(tempList.headers)
     // If the pagination limit set on the action input is <=0, then our limit is
     // set to the amount of workflows, total_count, that are in the repo. Else,
-    // we set the limit to the action input defined limit.
+    // we set the limit to the action input defined limit, which we know is >0.
     const paginationLimit =
       actionInputs.list_workflows_pagination_limit <= 0
         ? tempList.data.total_count
@@ -411,11 +411,9 @@ async function listRepoWorkflowsAPI(
         // If we're on the last page, to make sure we observe the action input
         // defined limit, if it's above 0, minus sum of per_page's already run
         perPage =
-          actionInputs.list_workflows_pagination_limit <= 0
+          actionInputs.list_workflows_pagination_limit <= 0 || pageNum < pageLimit
             ? MAX_PER_PAGE
-            : pageNum < pageLimit
-              ? MAX_PER_PAGE
-              : paginationLimit - MAX_PER_PAGE * (pageLimit - 1)
+            : paginationLimit - MAX_PER_PAGE * (pageLimit - 1)
         tempList = await ghRestAPI.actions.listRepoWorkflows({
           owner: owner(context),
           repo: repoName(context),
