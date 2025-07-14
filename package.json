@@ -63,7 +63,7 @@
     "comment": "We don't use https://www.npmjs.com/package/@github/local-action for this, despite being suggested"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.3.0",
+    "@eslint/compat": "^1.3.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
