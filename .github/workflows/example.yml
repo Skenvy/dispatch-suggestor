@@ -19,7 +19,7 @@ jobs:
         sparse-checkout-cone-mode: false
     - name: Dispatch 📤 Suggestor 📥
       id: dispatch-suggestor
-      uses: Skenvy/dispatch-suggestor@e4043d770e63ebb803ef74c968bf0e34b8f6a473 # v1.1.0
+      uses: Skenvy/dispatch-suggestor@d5bd143ee509e9479aaee6afe8b56cbf2e808a63 # v1.2.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: List changed files
