@@ -53,9 +53,9 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@octokit/graphql": "^8.2.2",
-    "@octokit/rest": "^21.1.1",
-    "@octokit/types": "^14.1.0",
+    "@octokit/graphql": "^9.0.1",
+    "@octokit/rest": "^22.0.0",
+    "@octokit/types": "^15.0.0",
     "minimatch": "^10.0.3",
     "yaml": "^2.8.1"
   },

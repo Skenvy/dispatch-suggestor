@@ -43,23 +43,23 @@ install_node:
 install_npm: install_node
 	$(INSTALL_NPM)
 
-# https://docs.npmjs.com/cli/v8/commands/npm-ci
+# https://docs.npmjs.com/cli/v11/commands/npm-ci
 setup: install_npm
 	$(NPM) list -g --depth 0
 	$(NPM) ci
 	$(NPM) list
 
-# https://docs.npmjs.com/cli/v8/commands/npm-outdated
+# https://docs.npmjs.com/cli/v11/commands/npm-outdated
 .PHONY: outdated
 outdated:
 	$(NPM) outdated
 
-# https://docs.npmjs.com/cli/v8/commands/npm-install
+# https://docs.npmjs.com/cli/v11/commands/npm-install
 .PHONY: install
 install: install_npm
 	$(NPM) install
 
-# https://docs.npmjs.com/cli/v8/commands/npm-update
+# https://docs.npmjs.com/cli/v11/commands/npm-update
 .PHONY: update
 update: install_npm
 	$(NPM) update --save
@@ -71,8 +71,8 @@ clean:
 	rm -rf .nyc_output
 	$(NPM) run clean
 
-# https://docs.npmjs.com/cli/v8/commands/npm-test
-# https://docs.npmjs.com/cli/v8/commands/npm-publish
+# https://docs.npmjs.com/cli/v11/commands/npm-test
+# https://docs.npmjs.com/cli/v11/commands/npm-publish
 .PHONY: test
 test: clean
 	$(NPM) test
@@ -94,12 +94,12 @@ verify_transpiled_checkin: bundle
 	echo "Exit if a change to the transpiled JavaScript is not committed"
 	git add dist && git diff --exit-code --cached --stat -- dist/
 
-# https://docs.npmjs.com/cli/v8/commands/npm-pack
+# https://docs.npmjs.com/cli/v11/commands/npm-pack
 .PHONY: build
 build: clean test lint verify_transpiled_checkin
 	$(NPM) pack
 
-# https://docs.npmjs.com/cli/v8/commands/npm-publish
+# https://docs.npmjs.com/cli/v11/commands/npm-publish
 .PHONY: publish
 publish:
 	$(NPM) publish --access=public $(SCOPED_PKG_NAME)-*.tgz
