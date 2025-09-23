@@ -935,7 +935,7 @@ THE SOFTWARE.
 ---
 
 Name: @octokit/core
-Version: 5.2.1
+Version: 5.2.2
 License: MIT
 Private: false
 Description: Extendable client for GitHub's REST & GraphQL APIs
@@ -1028,7 +1028,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 ---
 
 Name: @octokit/endpoint
-Version: 10.1.4
+Version: 11.0.0
 License: MIT
 Private: false
 Description: Turns REST API endpoints into generic request options
@@ -1062,7 +1062,7 @@ THE SOFTWARE.
 ---
 
 Name: fast-content-type-parse
-Version: 2.0.1
+Version: 3.0.0
 License: MIT
 Private: false
 Description: Parse HTTP Content-Type header according to RFC 7231
@@ -1105,7 +1105,7 @@ SOFTWARE.
 ---
 
 Name: @octokit/request-error
-Version: 6.1.8
+Version: 7.0.0
 License: MIT
 Private: false
 Description: Error class for Octokit request errors
@@ -1139,7 +1139,7 @@ THE SOFTWARE.
 ---
 
 Name: @octokit/request
-Version: 9.2.3
+Version: 10.0.3
 License: MIT
 Private: false
 Description: Send parameterized requests to GitHub's APIs with sensible defaults in browsers and Node
@@ -1173,7 +1173,7 @@ THE SOFTWARE.
 ---
 
 Name: @octokit/graphql
-Version: 8.2.2
+Version: 9.0.1
 License: MIT
 Private: false
 Description: GitHub GraphQL API client for browsers and Node
@@ -1207,7 +1207,7 @@ THE SOFTWARE.
 ---
 
 Name: before-after-hook
-Version: 3.0.2
+Version: 4.0.0
 License: Apache-2.0
 Private: false
 Description: asynchronous before/error/after hooks for internal functionality
@@ -1421,7 +1421,7 @@ License Copyright:
 ---
 
 Name: @octokit/auth-token
-Version: 5.1.2
+Version: 6.0.0
 License: MIT
 Private: false
 Description: GitHub API token authentication for browsers and Node.js
@@ -1455,7 +1455,7 @@ THE SOFTWARE.
 ---
 
 Name: @octokit/core
-Version: 6.1.5
+Version: 7.0.4
 License: MIT
 Private: false
 Description: Extendable client for GitHub's REST & GraphQL APIs
@@ -1489,7 +1489,7 @@ THE SOFTWARE.
 ---
 
 Name: @octokit/plugin-request-log
-Version: 5.3.1
+Version: 6.0.0
 License: MIT
 Private: false
 Description: Log all requests and request errors
@@ -1509,7 +1509,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ---
 
 Name: @octokit/plugin-paginate-rest
-Version: 11.6.0
+Version: 13.1.1
 License: MIT
 Private: false
 Description: Octokit plugin to paginate REST API endpoint responses
@@ -1528,7 +1528,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ---
 
 Name: @octokit/plugin-rest-endpoint-methods
-Version: 13.5.0
+Version: 16.1.0
 License: MIT
 Private: false
 Description: Octokit plugin adding one method for all of api.github.com REST API endpoints
@@ -1548,7 +1548,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ---
 
 Name: @octokit/rest
-Version: 21.1.1
+Version: 22.0.0
 License: MIT
 Private: false
 Description: GitHub REST API client for Node.js
@@ -1588,7 +1588,7 @@ THE SOFTWARE.
 ---
 
 Name: yaml
-Version: 2.8.0
+Version: 2.8.1
 License: ISC
 Private: false
 Description: JavaScript parser and stringifier for YAML
@@ -1614,20 +1614,20 @@ THIS SOFTWARE.
 
 ---
 
-Name: balanced-match
-Version: 1.0.2
+Name: @isaacs/balanced-match
+Version: 4.0.1
 License: MIT
 Private: false
 Description: Match balanced character pairs, like "{" and "}"
-Repository: git://github.com/juliangruber/balanced-match.git
-Homepage: https://github.com/juliangruber/balanced-match
-Author: Julian Gruber <mail@juliangruber.com> (http://juliangruber.com)
+Repository: git://github.com/isaacs/balanced-match.git
 License Copyright:
 ===
 
 (MIT)
 
-Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;
+Original code Copyright Julian Gruber <julian@juliangruber.com>
+
+Port to TypeScript Copyright Isaac Z. Schlueter <i@izs.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -1649,20 +1649,19 @@ SOFTWARE.
 
 ---
 
-Name: brace-expansion
-Version: 2.0.1
+Name: @isaacs/brace-expansion
+Version: 5.0.0
 License: MIT
 Private: false
 Description: Brace expansion as known from sh/bash
-Repository: git://github.com/juliangruber/brace-expansion.git
-Homepage: https://github.com/juliangruber/brace-expansion
-Author: Julian Gruber <mail@juliangruber.com> (http://juliangruber.com)
 License Copyright:
 ===
 
 MIT License
 
-Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
+Copyright Julian Gruber <julian@juliangruber.com>
+
+TypeScript port Copyright Isaac Z. Schlueter <i@izs.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1685,7 +1684,7 @@ SOFTWARE.
 ---
 
 Name: minimatch
-Version: 10.0.1
+Version: 10.0.3
 License: ISC
 Private: false
 Description: a glob matcher in javascript
