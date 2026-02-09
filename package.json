@@ -56,7 +56,7 @@
     "@octokit/graphql": "^9.0.1",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^16.0.0",
-    "minimatch": "^10.0.3",
+    "minimatch": "^10.1.2",
     "yaml": "^2.8.1"
   },
   "devDepsComment": {
