@@ -51,7 +51,7 @@
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.0",
     "@actions/github": "^6.0.1",
     "@octokit/graphql": "^9.0.3",
     "@octokit/rest": "^22.0.1",
@@ -63,8 +63,8 @@
     "comment": "We don't use https://www.npmjs.com/package/@github/local-action for this, despite being suggested"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.4.1",
-    "@rollup/plugin-commonjs": "^28.0.9",
+    "@eslint/compat": "^2.0.2",
+    "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "^25.2.3",
