@@ -17,7 +17,7 @@ jobs:
     - name: 🏁 Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: 🛡👨‍💻🛡 Init CodeQL
-      uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
+      uses: github/codeql-action/init@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4.34.0
       with:
         languages: 'javascript'
         queries: +security-extended,security-and-quality
@@ -27,8 +27,8 @@ jobs:
           paths-ignore:
           - 'dist'
     - name: 🛠 Autobuild
-      uses: github/codeql-action/autobuild@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
+      uses: github/codeql-action/autobuild@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4.34.0
     - name: 🛡👨‍💻🛡 Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
+      uses: github/codeql-action/analyze@c6f931105cb2c34c8f901cc885ba1e2e259cf745 # v4.34.0
       with:
         category: "/language:javascript"
